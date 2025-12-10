@@ -24,16 +24,20 @@ int main(){
 
   Node* nodes = problem->nodes;
 
-  Node* nodes_to_visit[6] = {&nodes[4], &nodes[0], &nodes[1], &nodes[2], &nodes[3], &nodes[5]};
+  vector<Node*> nodes_to_visit;
+  nodes_to_visit.insert(nodes_to_visit.end(), {&nodes[4], &nodes[0], &nodes[1], &nodes[2], &nodes[3], &nodes[5]});
 
-  Route new_route = Route(problem, problem->vehicles, nodes_to_visit, 6);
+  Route new_route = Route(problem, problem->vehicles, nodes_to_visit);
 
-  for(int i = 0; i < new_route.stop_amount; i++){
+  for(int i = 0; i < new_route.stops.size(); i++){
     cout << "Visiting Node Index: " << new_route.stops[i]->id  << " for: " << new_route.stops[i]->node_type << endl;
   }
 
   cout << "Cost of Route: " << new_route.cost << endl;
   cout << "Is Route Feasible: " << new_route.is_feasible() << endl;
+
+  cout << "Pair of request 0: " << problem->requests[0].origin->pair_node->id << endl;
+
 
   return 0;
 }

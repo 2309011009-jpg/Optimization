@@ -1,6 +1,7 @@
 #include "problem_definitions.h"
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 PDPTWT* parse(std::string path){
 
@@ -35,7 +36,7 @@ PDPTWT* parse(std::string path){
         number_of_transshipment_nodes;
 
   Node* nodes = new Node[number_of_nodes];
-
+  Node* t_nodes = new Node[number_of_transshipment_nodes];
   Vehicle* vehicles = new Vehicle[number_of_vehicles];
 
   int id = 0;
@@ -46,10 +47,16 @@ PDPTWT* parse(std::string path){
   int b;
   int load;
 
+  int temp = 0;
   while(problem_file >> node_type >> x >> y >> a >> b >> load){
 
     nodes[id] = Node(id, x, y, node_type[0], load, a, b);
-    
+
+    if(nodes[id].node_type == 't'){
+        t_nodes[temp] = nodes[id];
+        temp++;
+    }
+
     id++;
   }
 
@@ -86,16 +93,16 @@ PDPTWT* parse(std::string path){
         }
     }
 
+    std::vector<Request> requests;
     // Link them (assuming Index 0 of P matches Index 0 of D)
     for(int i = 0; i < number_of_requests; i++) {
-        if (i < p_count && i < d_count) {
-            pickups[i]->add_pair(deliveries[i]);
-        }
+        pickups[i]->add_pair(deliveries[i]);
+        requests.push_back(Request(pickups[i], deliveries[i]));
     }
 
     // Clean up temp helper arrays (not the nodes themselves!)
     delete[] pickups;
     delete[] deliveries;
 
-  return new PDPTWT(nodes, number_of_nodes, vehicles, number_of_vehicles, number_of_requests);
+  return new PDPTWT(nodes, number_of_nodes, vehicles, number_of_vehicles, requests, t_nodes, number_of_transshipment_nodes);
 }
