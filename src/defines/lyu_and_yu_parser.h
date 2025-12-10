@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-PDPTWT* parse(std::string path){
+PDPTWT parse(std::string path){
 
   std::ifstream problem_file(path);
   if (!problem_file.is_open()) {
@@ -104,5 +104,5 @@ PDPTWT* parse(std::string path){
     delete[] pickups;
     delete[] deliveries;
 
-  return new PDPTWT(nodes, number_of_nodes, vehicles, number_of_vehicles, requests, t_nodes, number_of_transshipment_nodes);
+  return PDPTWT(nodes, number_of_nodes, vehicles, number_of_vehicles, requests, t_nodes, number_of_transshipment_nodes);
 }

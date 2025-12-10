@@ -6,122 +6,113 @@
 
 
 using namespace mlpalns;
-// Popülasyon kullanmak local minmumdan kaçmak için düşünülebilir.
+// Popülasyon kullanmak local minimumdan kaçmak için düşünülebilir.
  
-void Alg2(Request& request, PDPTWT_solution& solution){
+PDPTWT_solution Alg2(Request& request, PDPTWT_solution& solution){
 
-  for(int v = 0; v <= solution.problem->vehicle_amount; v++){ // Per Car.
-    Route* current_route = solution.problem->vehicles[v].route;
-    float best_cost = 9999999; // Infinitely high number.
-    Route best_route(solution.problem, current_route->stops);
+float best_cost;
+float current_cost;
+PDPTWT_solution best_solution = solution;
+PDPTWT_solution current_solution = solution;
+best_cost = 999999; // +infinity
 
-    for(int i = 0; i <= current_route->stops.size(); i++){ // Try every position.
-      for(int j = 0; j < current_route->stops.size() && j > i + 1; j++){
+for(int v = 0; v < solution.problem->vehicle_amount; v++){ // Per Vehicle
+  Route* route_of_v = &solution.routes[v];
 
-        current_route->stops.insert(current_route->stops.begin() + i, request.origin);
-        current_route->stops.insert(current_route->stops.begin() + j, request.destination);
+  for(int i = 0; i <= route_of_v->stops.size(); i++){ // Try Every Combination
+    for(int j = i + 1; j <= route_of_v->stops.size(); j++){
 
-        if(current_route->calculate_cost() < best_cost){
-          best_cost = current_route->calculate_cost();
-          best_route.stops = current_route->stops;
-        }
+      route_of_v->stops.insert(route_of_v->stops.begin() + i, request.origin);
+      route_of_v->stops.insert(route_of_v->stops.begin() + j, request.destination);
 
-        current_route->remove_request(request);
+      current_solution = solution;
+      current_cost = current_solution.getCost();
+
+      if(current_cost < best_cost){
+        best_cost = current_cost;
+        best_solution = current_solution;
       }
-    }
 
-    // Update route with the best one found.
-    current_route->stops = best_route.stops;
+      route_of_v->remove_request(request);
+    }
   }
 }
 
-
-void Alg3(Request& request, PDPTWT_solution& solution){
-
-
-  float best_cost = 999999;
+return best_solution;
+}
 
 
-  // Per Transshipment
-  for(int t = 0; t < solution.problem->transshipment_node_amount; t++){
-    Node* transshipment_node = &solution.problem->transshipment_nodes[t];
+PDPTWT_solution Alg3(Request& request, PDPTWT_solution& solution){
 
-    // Per Vehicle 1
-    for(int v1 = 0; v1 < solution.problem->vehicle_amount; v1++){
-      Vehicle vehicle1 = solution.problem->vehicles[v1]; 
+float best_cost;
+float current_cost;
+PDPTWT_solution best_solution = solution;
+best_cost = 999999; // +infinity
 
-      // Per Vehicle 2
-      for(int v2 = 0; v2 < solution.problem->vehicle_amount; v2++){
-        Vehicle vehicle2 = solution.problem->vehicles[v2];
-        
-        if(&vehicle1 != &vehicle2){ // Make sure they're not the same vehicle.
+for(int t = 0; t < solution.problem->transshipment_node_amount; t++){
+  Node* trans_node = &solution.problem->transshipment_nodes[t];
 
-          // Remove transshipment node if it's already in route.
-          for(int a = 0; a < vehicle1.route->stops.size(); a++){
-            if(vehicle1.route->stops[a] == transshipment_node){
-              vehicle1.route->stops.erase(vehicle1.route->stops.begin() + a);
-            }
-          }
+  for(int v1 = 0; v1 <= solution.problem->vehicle_amount; v1++){
+    Vehicle* vehicle1 = &solution.problem->vehicles[v1];
 
-          for(int a = 0; a < vehicle2.route->stops.size(); a++){
-            if(vehicle2.route->stops[a] == transshipment_node){
-              vehicle2.route->stops.erase(vehicle2.route->stops.begin() + a);
-            }
-          }
+    for(int v2 = 0; v2 <= solution.problem->vehicle_amount; v2++){
+      Vehicle* vehicle2 = &solution.problem->vehicles[v2];
 
-          for(int i1 = 0; i1 <= vehicle1.route->stops.size(); i1++){
-            for(int j1 = 0; j1 <= vehicle2.route->stops.size() && j1 >= i1+1; j1++){
+      // Make sure they're not the same vehicle.
+      if(vehicle1 != vehicle2){ 
 
-              for(int i2 = 0; i2 <= vehicle2.route->stops.size(); i2++){
-                for(int j2 = 0; j2 <= vehicle2.route->stops.size() && j2 >= i2 + 1; j2++){
+        solution.routes[v1].remove_request(request);
+        solution.routes[v2].remove_request(request);
 
-                  // Pickup to Transshipment Node.
-                  vehicle1.route->stops.insert(vehicle1.route->stops.begin() + i1, request.origin);
-                  vehicle1.route->stops.insert(vehicle1.route->stops.begin() + j1, transshipment_node);
-                  int v1_transshipment_cnt = vehicle1.route->transshipment_actions.size();
-                  vehicle1.route->transshipment_actions[v1_transshipment_cnt] = std::make_tuple(request.origin, transshipment_node, 0);
+        for(int i = 0; i <= solution.routes[v1].stops.size(); i++){
+          for(int j = i + 1; j <= solution.routes[v1].stops.size(); j++){
 
-                  // Transshipment to Drop-off Node.
-                  vehicle2.route->stops.insert(vehicle2.route->stops.begin() + i2, transshipment_node);
-                  vehicle2.route->stops.insert(vehicle2.route->stops.begin() + j2, request.destination);
-                  int v2_transshipment_cnt = vehicle2.route->transshipment_actions.size();
-                  vehicle2.route->transshipment_actions[v2_transshipment_cnt] = std::make_tuple(request.origin, transshipment_node, 1);
-                  
-                  float total_cost = vehicle1.route->calculate_cost() + vehicle2.route->calculate_cost();
+            for(int i2 = 0; i2 <= solution.routes[v1].stops.size(); i2++){
+              for(int j2 = i2 + 1; j2 <= solution.routes[v1].stops.size(); j2++){
+                
+                solution.routes[v1].stops.insert(solution.routes[v1].stops.begin() + i, request.origin);
+                solution.routes[v1].stops.insert(solution.routes[v1].stops.begin() + j, trans_node);
+                solution.routes[v1].stops.insert(solution.routes[v2].stops.begin() + i2, trans_node);
+                solution.routes[v1].stops.insert(solution.routes[v2].stops.begin() + j2, request.destination);
 
-                  if(total_cost < best_cost){
-
-
-                    
-                  }
-                  
+                current_cost = solution.getCost();
+                if(current_cost < best_cost){
+                  best_cost = current_cost;
+                  best_solution = solution;
                 }
 
+                solution.routes[v1].stops.erase(solution.routes[v1].stops.begin() + i);
+                solution.routes[v1].stops.erase(solution.routes[v1].stops.begin() + j);
+                solution.routes[v1].stops.erase(solution.routes[v2].stops.begin() + i2);
+                solution.routes[v1].stops.erase(solution.routes[v2].stops.begin() + j2);
+
               }
-
             }
+
+
           }
-
-
         }
+        
+      }
     }
-    }
+
   }
+}
 
-
+return best_solution;
 }
 
 
 struct PDPTWTSolutionCreator : InitialSolutionCreator<PDPTWT_solution, PDPTWT> {
 
-    PDPTWT_solution create_initial_solution(PDPTWT instance, std::mt19937& mt) {
+    PDPTWT_solution create_initial_solution(const PDPTWT& instance, std::mt19937& mt) {
       
       std::vector<Request> singles;
       std::vector<Request> doubles;
 
-      PDPTWT_solution initial_solution(&instance);
+      PDPTWT_solution initial_solution(instance);
 
-      int max_dist = 0;
+      float max_dist = 0;
       for(int i = 0; i < instance.node_amount * instance.node_amount; i++){
         if(instance.distance_matrix[i] > max_dist) max_dist = instance.distance_matrix[i];
       }
@@ -139,11 +130,11 @@ struct PDPTWTSolutionCreator : InitialSolutionCreator<PDPTWT_solution, PDPTWT> {
       }
 
       for (int i = 0; i < singles.size(); i++){
-        Alg2(singles[i], initial_solution);
+        initial_solution = Alg2(singles[i], initial_solution);
       }
 
       for (int i = 0; i < doubles.size(); i++){
-        Alg3(doubles[i], initial_solution);
+        initial_solution = Alg3(doubles[i], initial_solution);
       }
 
       return initial_solution;

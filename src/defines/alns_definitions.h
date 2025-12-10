@@ -6,13 +6,14 @@
 
 class PDPTWT_solution{
   public:
-    PDPTWT* problem;
-    Vehicle** vehicles; // An array of pointers
+    const PDPTWT* problem;
+    std::vector<Route> routes;
+    // Route n corresponds to vehicle n
 
     PDPTWT_solution(
-      PDPTWT* problem_instance
+      const PDPTWT& problem_instance
     ){
-      problem = problem_instance;
+      problem = &problem_instance;
 
       for(int i = 0; i < problem->vehicle_amount; i++){
         // Initiate a route per vehicle with only the origin & destination.
@@ -20,26 +21,18 @@ class PDPTWT_solution{
         route_stops.push_back(problem->vehicles[i].origin);
         route_stops.push_back(problem->vehicles[i].destination);
 
-        vehicles[i]->route = new Route(problem, route_stops); 
+        routes.push_back(Route(problem_instance, route_stops)); 
       }
     }
-
-    ~PDPTWT_solution(){
-      for (int i = 0; problem->vehicle_amount; i++){
-        delete vehicles[i]->route;
-      }
-    }
-
 
     float getCost(){
       float total_cost = 0;
-      for(int i = 0; i < problem->vehicle_amount; i++){
-        total_cost += vehicles[i]->route->calculate_cost();
+      for(int i = 0; i < routes.size(); i++){
+        total_cost += routes[i].calculate_cost();
       }
 
       return total_cost;
     }
-
 
 };
 

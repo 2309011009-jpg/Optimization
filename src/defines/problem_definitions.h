@@ -54,18 +54,15 @@ class Vehicle{
     int capacity;
     Node* origin;
     Node* destination;
-    Route* route;
 
     Vehicle(
       int max = 0, 
       Node* origin_node = nullptr, 
-      Node* destination_node = nullptr,
-      Route* route_t = nullptr
+      Node* destination_node = nullptr
     ){
       capacity = max;
       origin = origin_node;
       destination = destination_node;
-      route = route_t;
     }
 };
 
@@ -133,7 +130,7 @@ class PDPTWT{
     }
     
     ~PDPTWT() {
-    delete[] distance_matrix;
+    //delete[] distance_matrix; TODO: Double free here for unknown reasons
     }
 
 
@@ -153,16 +150,16 @@ class PDPTWT{
 class Route{
   public:
 
-    PDPTWT* problem;
+    const PDPTWT* problem;
     std::vector<Node*> stops;
     std::vector<std::tuple<Node*, Node*, bool>> transshipment_actions;    
 
     Route(
-      PDPTWT* problem_inst,
+      const PDPTWT& problem_inst,
       std::vector<Node*> node_arr,
       std::vector<std::tuple<Node*, Node*, bool>> tr_actions = {}
     ){
-      problem = problem_inst;
+      problem = &problem_inst;
       stops = node_arr;
       transshipment_actions = tr_actions;
     }
