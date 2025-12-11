@@ -15,13 +15,13 @@ using namespace mlpalns;
 // IMPORTANT: Another modification is that if there are no transshipment nodes in the problem, all will be placed in singles.
 
 
-PDPTWT_solution Alg2(Request& request, PDPTWT_solution& solution){
+PDPTWT_solution Alg2(const Request& request, PDPTWT_solution& solution){
 
 float best_cost;
 float current_cost;
 PDPTWT_solution best_solution = solution;
 PDPTWT_solution current_solution = solution;
-best_cost = 999999; // +infinity
+best_cost = std::numeric_limits<float>::max(); // +infinity
 
 for(int v = 0; v < solution.problem->vehicle_amount; v++){ // Per Vehicle
   Route* route_of_v = &solution.routes[v];
@@ -38,6 +38,14 @@ for(int v = 0; v < solution.problem->vehicle_amount; v++){ // Per Vehicle
       if(current_cost < best_cost){
         best_cost = current_cost;
         best_solution = current_solution;
+        auto it = std::find(solution.problem->requests.begin(), solution.problem->requests.end(), request);
+        if (it != solution.problem->requests.end()) {
+          // 3. Convert iterator to integer index
+          int index = std::distance(solution.problem->requests.begin(), it);
+          
+          // 4. Perform the assignment
+          solution.unassigned[index] = 0; // 0 for false (Assigned)
+      }
       }
 
       route_of_v->stops.erase(route_of_v->stops.begin() + j);
@@ -50,12 +58,12 @@ return best_solution;
 }
 
 
-PDPTWT_solution Alg3(Request& request, PDPTWT_solution& solution){
+PDPTWT_solution Alg3(const Request& request, PDPTWT_solution& solution){
 
 float best_cost;
 float current_cost;
 PDPTWT_solution best_solution = solution;
-best_cost = 999999; // +infinity
+best_cost = std::numeric_limits<float>::max(); // +infinity
 
 for(int t = 0; t < solution.problem->transshipment_node_amount; t++){ // Per Transshipment Node
   Node* trans_node = &solution.problem->transshipment_nodes[t];
@@ -69,13 +77,13 @@ for(int t = 0; t < solution.problem->transshipment_node_amount; t++){ // Per Tra
       // Make sure they're not the same vehicle.
       if(vehicle1 != vehicle2){ 
 
-        solution.routes[v1].remove_request(request);
-        solution.routes[v2].remove_request(request);
+        //solution.routes[v1].remove_request(request); There's no requests in there, as this is the initial soltion
+        //solution.routes[v2].remove_request(request); I do not know why the paper even suggests this.
 
-        for(int i = 0; i <= solution.routes[v1].stops.size(); i++){
+        for(int i = 1; i <= solution.routes[v1].stops.size(); i++){
           for(int j = i + 1; j <= solution.routes[v1].stops.size(); j++){
 
-            for(int i2 = 0; i2 <= solution.routes[v2].stops.size(); i2++){
+            for(int i2 = 1; i2 <= solution.routes[v2].stops.size(); i2++){
               for(int j2 = i2 + 1; j2 <= solution.routes[v2].stops.size(); j2++){
 
                 // TODO: Make this more readable.
@@ -92,6 +100,14 @@ for(int t = 0; t < solution.problem->transshipment_node_amount; t++){ // Per Tra
                 if(current_cost < best_cost){
                   best_cost = current_cost;
                   best_solution = solution;
+                  auto it = std::find(solution.problem->requests.begin(), solution.problem->requests.end(), request);
+                  if (it != solution.problem->requests.end()) {
+                    // 3. Convert iterator to integer index
+                    int index = std::distance(solution.problem->requests.begin(), it);
+                    
+                    // 4. Perform the assignment
+                    solution.unassigned[index] = 0; // 0 for false (Assigned)
+                }
                 }
 
                 solution.routes[v1].stops.erase(solution.routes[v1].stops.begin() + j);
@@ -144,8 +160,6 @@ struct PDPTWTSolutionCreator : InitialSolutionCreator<PDPTWT_solution, PDPTWT> {
         else{
           doubles.push_back(current_request);
         }
-
-        initial_solution.unassigned[i] = false;
       }
 
       for (int i = 0; i < singles.size(); i++){

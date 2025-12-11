@@ -2,14 +2,25 @@
 #include "defines/problem_definitions.h"
 #include "defines/alns_definitions.h"
 #include "defines/initial_solution.h"
+#include "defines/random_removal.h"
+#include "defines/greedy_insertion.h"
+#include "defines/dummy_visitor.h"
+
+// ALNS Library Headers
 #include "../libraries/adaptive-large-neighbourhood-search/src/PALNS.h"
+#include "../libraries/adaptive-large-neighbourhood-search/src/Parameters.h"
 
 #include <iostream>
+#include <chrono>
+
+using namespace std::chrono;
+
 using namespace std;
-
+using namespace mlpalns;
 int main(){
+  // ../data/PDPT/PDPT-R25-K2-T2/PDPT-R25-K2-T2-Q100-2.txt
+  PDPTWT problem = parse("../data/PDPT/PDPT-R10-K3-T3/PDPT-R10-K3-T3-Q100-9.txt");
 
-  PDPTWT problem = parse("/home/inthezone/Codes/Optimization/data/Examples/example4.txt");
 
   cout << "Problem Information:" << endl;
   cout << "Node Amount: " << problem.node_amount << endl;
@@ -26,24 +37,33 @@ int main(){
   std::mt19937 rng(42);
 
   PDPTWT_solution initial_sol = creator.create_initial_solution(problem, rng);
+  initial_sol.print_solution();
 
-  for(int i = 0; i < problem.vehicle_amount; i++){
-    cout << endl << "Route of Vehicle " << i << " : ";
+  RandomRemoval random_removal;
+  alns.add_destroy_method(random_removal, "Remove Randomly");
 
-    for(int j = 0; j < initial_sol.routes[i].stops.size(); j++){
-      cout << initial_sol.routes[i].stops[j]->id << " - "; 
-    }
+  insert_w_transfer insert_w_transfer;
+  alns.add_repair_method(insert_w_transfer, "Insert With Transfer");
 
-    cout << "COST: " << initial_sol.routes[i].calculate_cost() << endl;
+  mlpalns::Parameters params("../libraries/adaptive-large-neighbourhood-search/Params.json");
 
-  }
+  // 1. Explicitly define the variable as the BASE class type (AlgorithmVisitor)
+std::unique_ptr<mlpalns::AlgorithmVisitor<PDPTWT_solution>> visitor = 
+    std::make_unique<DummyVisitor<PDPTWT_solution>>();
 
-  cout << "TOTAL COST: " << initial_sol.getCost() << endl;
+// 2. Now pass it (it matches the function signature perfectly)
+alns.set_algorithm_visitor(visitor);
 
-  cout << "Initial Solution Feasibility: " << initial_sol.is_feasible() << endl;
-
-
-
+  cout << endl << "SOLUTION STARTING" << endl;
+  auto start = high_resolution_clock::now();
+  PDPTWT_solution best_sol = alns.go(initial_sol, 8, params);
+  auto stop = high_resolution_clock::now();
+  cout << "--- Finished ---" << endl;
+  cout << "Best Cost: " << best_sol.getCost() << endl;
+  auto duration = duration_cast<microseconds>(stop - start);
+  cout << "Time Spent: " << duration.count() << " Microseconds" << endl;
+  // Print details
+  best_sol.print_solution();
 
   return 0;
 }

@@ -1,9 +1,9 @@
 {
-  "prerun-iterations": 1000,
-  "total-iterations": 150000,
-  "timeout-s": 60,
-  "iters-without-improvement-max": 5000,
-  "iters-without-improvement-alarm": 1000,
+  "prerun-iterations": 0,
+  "total-iterations": 100000,
+  "timeout-s": 30,
+  "iters-without-improvement-max": 300,
+  "iters-without-improvement-alarm": 100000,
 
   "iterations-without-syncing-threads": 1,
   "prob-return-to-best-known": 0.0,
@@ -22,12 +22,12 @@
     "Random walk",
     "Custom"
   ],
-  "acceptance-criterion": "Simulated annealing",
+  "acceptance-criterion": "Random walk",
 
   "acceptance-params-base-possible-values": [
     "time", "iterations"
   ],
-  "acceptance-params-base": "time",
+  "acceptance-params-base": "iterations",
 
   "scores": {
     "accepted": 2.0,
@@ -75,8 +75,8 @@
       "water-level-decrease-exp-factor": 0.01
     },
     "worse-accept": {
-      "start-probability": 0.1,
-      "end-probability": 0.01,
+      "start-probability": 1.0,
+      "end-probability": 1.0,
       "probability-decrease-is-linear": false
     },
     "conservative-worse-accept": {

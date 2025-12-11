@@ -79,6 +79,12 @@ class Request{
       origin = origin_node;
       destination = destination_node;
     }
+
+    bool operator==(const Request& other) const {
+        // Two requests are equal if they have the same origin and destination
+        return (origin == other.origin && destination == other.destination);
+    }
+
 };
 
 
@@ -141,7 +147,7 @@ class PDPTWT{
 
 
     // Required by ALNS library
-    int getInstanceSize(){return node_amount;} 
+    int getInstanceSize() const {return node_amount;} 
 
     
 };
@@ -164,27 +170,8 @@ class Route{
       transshipment_actions = tr_actions;
     }
 
-    /*bool is_feasible(){
 
-      if(_check_structure() == false){return false;}
-      if(_check_capacity() == false){return false;}
-      if(_check_timing() == false){return false;}
-      if(_check_precedence() == false){return false;}
-
-      return true;
-    }*/
-
-
-    void remove_request(Request& request){
-      for(int i = 0; i < stops.size(); i++){
-        if(stops[i] == request.origin || stops[i] == request.destination){
-          stops.erase(stops.begin() + i);
-          //i--; // adjust index since vector shrank
-        }
-      }
-    }
-
-    float calculate_cost(){
+    float calculate_cost() const{
         float total = 0;
 
         for (int i = 0; i < stops.size() - 1; i++) {
@@ -195,7 +182,7 @@ class Route{
     }
 
 
-      bool _check_timing(){
+      bool _check_timing() const{
         float current_time = 0;
         // Added safety check
         if(stops.size() == 0) return true;
@@ -211,7 +198,7 @@ class Route{
       }
 
 
-      bool _check_precedence(){
+      bool _check_precedence() const{
         for(int i = 0; i < stops.size(); i++){
           if(stops[i]->node_type == 'd'){
             Node* pickup = stops[i]->pair_node;
@@ -248,14 +235,58 @@ class Route{
 
             if(!transshipment_was_visited){return false;}
           }
+
+          // --- CASE 2: Transfer Drop (NEW LOGIC) ---
+          else if(stops[i]->node_type == 't'){
+            
+            // We need to check all actions happening at THIS transfer node
+            for(auto& action : transshipment_actions){
+                Node* req_origin = std::get<0>(action);
+                Node* t_node = std::get<1>(action);
+                bool is_pickup = std::get<2>(action); // 0 = Drop, 1 = Pickup
+
+                // If this action is a DROP occurring at the current stop
+                if(t_node == stops[i] && is_pickup == false){
+                    
+                    bool has_item = false;
+
+                    // Check A: Did we visit the Origin (Source) previously?
+                    for(int prev = 0; prev < i; prev++){
+                        if(stops[prev] == req_origin) {
+                            has_item = true; 
+                            break;
+                        }
+                    }
+
+                    // Check B: Did we pick it up from ANOTHER transfer node previously?
+                    if(!has_item){
+                        for(int prev = 0; prev < i; prev++){
+                            // Iterate previous stops to find a Transfer Pickup for this SAME request
+                            if(stops[prev]->node_type == 't'){
+                                for(auto& prev_action : transshipment_actions){
+                                    if(std::get<0>(prev_action) == req_origin && // Same Request
+                                       std::get<1>(prev_action) == stops[prev] && // At that previous stop
+                                       std::get<2>(prev_action) == true) {        // It was a Pickup
+                                        has_item = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if(has_item) break;
+                        }
+                    }
+
+                    if(!has_item) return false; // FAIL: Dropping phantom package
+                }
+            }
         }
+    }
 
-        return true;
-      }
-
+    return true;
+}
 
       // Get the value of load change visiting a certain node will cause.
-      int _get_load_change(Node* stop){
+      int _get_load_change(Node* stop) const{
         if(stop->node_type != 't'){return stop->load;}
 
         else{
