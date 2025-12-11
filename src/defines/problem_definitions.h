@@ -179,7 +179,7 @@ class Route{
       for(int i = 0; i < stops.size(); i++){
         if(stops[i] == request.origin || stops[i] == request.destination){
           stops.erase(stops.begin() + i);
-          i--; // adjust index since vector shrank
+          //i--; // adjust index since vector shrank
         }
       }
     }
@@ -192,31 +192,7 @@ class Route{
         }
         
         return total;
-      }
-
-    private:
-    
-
-      /*bool _check_structure(){
-        if(stops.size() < 2){return false;}
-        if(stops.front() != vehicle->origin){return false;}
-        if(stops.back() != vehicle->destination){return false;}
-
-        return true;
-      }
-
-
-      bool _check_capacity(){
-        int current_load = 0;
-        for(int i = 0; i < stops.size(); i++){
-          current_load += _get_load_change(stops[i]);
-
-          if(current_load > vehicle->capacity)
-            return false;
-        }
-
-        return true;
-      }*/
+    }
 
 
       bool _check_timing(){

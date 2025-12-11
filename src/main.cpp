@@ -9,7 +9,7 @@ using namespace std;
 
 int main(){
 
-  PDPTWT problem = parse("/home/inthezone/Codes/Optimization/input_data/example3.txt");
+  PDPTWT problem = parse("/home/inthezone/Codes/Optimization/data/Examples/example4.txt");
 
   cout << "Problem Information:" << endl;
   cout << "Node Amount: " << problem.node_amount << endl;
@@ -34,11 +34,15 @@ int main(){
       cout << initial_sol.routes[i].stops[j]->id << " - "; 
     }
 
-    cout << "COST: " << initial_sol.routes[i].calculate_cost();
+    cout << "COST: " << initial_sol.routes[i].calculate_cost() << endl;
 
   }
 
-  cout << "TOTAL COST: " << initial_sol.getCost();
+  cout << "TOTAL COST: " << initial_sol.getCost() << endl;
+
+  cout << "Initial Solution Feasibility: " << initial_sol.is_feasible() << endl;
+
+
 
 
   return 0;
