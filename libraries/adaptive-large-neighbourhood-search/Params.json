@@ -1,8 +1,8 @@
 {
   "prerun-iterations": 0,
-  "total-iterations": 100000,
-  "timeout-s": 30,
-  "iters-without-improvement-max": 300,
+  "total-iterations": 25000,
+  "timeout-s": 90,
+  "iters-without-improvement-max": 2000,
   "iters-without-improvement-alarm": 100000,
 
   "iterations-without-syncing-threads": 1,

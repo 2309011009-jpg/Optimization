@@ -86,14 +86,33 @@ for(int t = 0; t < solution.problem->transshipment_node_amount; t++){ // Per Tra
             for(int i2 = 1; i2 <= solution.routes[v2].stops.size(); i2++){
               for(int j2 = i2 + 1; j2 <= solution.routes[v2].stops.size(); j2++){
 
+
+                int v1_action_index = 0;
+                for(int k = 0; k < j; k++){
+                    // Count how many transfer nodes appear before our insertion point 'j'
+                    if(solution.routes[v1].stops[k]->node_type == 't') v1_action_index++;
+                }
+
+
+                int v2_action_index = 0;
+                for(int k = 0; k < i2; k++){
+                    if(solution.routes[v2].stops[k]->node_type == 't') v2_action_index++;
+                }
+
                 // TODO: Make this more readable.
                 solution.routes[v1].stops.insert(solution.routes[v1].stops.begin() + i, request.origin);
                 solution.routes[v1].stops.insert(solution.routes[v1].stops.begin() + j, trans_node);
-                solution.routes[v1].transshipment_actions.push_back(std::make_tuple(request.origin, trans_node, 0));
+                solution.routes[v1].transshipment_actions.insert(
+                    solution.routes[v1].transshipment_actions.begin() + v1_action_index, 
+                    std::make_tuple(request.origin, trans_node, 0)
+                );
 
                 solution.routes[v2].stops.insert(solution.routes[v2].stops.begin() + i2, trans_node);
                 solution.routes[v2].stops.insert(solution.routes[v2].stops.begin() + j2, request.destination);
-                solution.routes[v2].transshipment_actions.push_back(std::make_tuple(request.origin, trans_node, 1));
+                solution.routes[v2].transshipment_actions.insert(
+                    solution.routes[v2].transshipment_actions.begin() + v2_action_index, 
+                    std::make_tuple(request.origin, trans_node, 1)
+                );
 
 
                 current_cost = solution.getCost();
@@ -116,8 +135,8 @@ for(int t = 0; t < solution.problem->transshipment_node_amount; t++){ // Per Tra
                 solution.routes[v2].stops.erase(solution.routes[v2].stops.begin() + j2);
                 solution.routes[v2].stops.erase(solution.routes[v2].stops.begin() + i2);
 
-                solution.routes[v1].transshipment_actions.pop_back();
-                solution.routes[v2].transshipment_actions.pop_back();
+                solution.routes[v1].transshipment_actions.erase(solution.routes[v1].transshipment_actions.begin() + v1_action_index);
+                solution.routes[v2].transshipment_actions.erase(solution.routes[v2].transshipment_actions.begin() + v2_action_index);
 
               }
             }

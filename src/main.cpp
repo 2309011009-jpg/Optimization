@@ -19,7 +19,7 @@ using namespace std;
 using namespace mlpalns;
 int main(){
   // ../data/PDPT/PDPT-R25-K2-T2/PDPT-R25-K2-T2-Q100-2.txt
-  PDPTWT problem = parse("../data/PDPT/PDPT-R10-K3-T3/PDPT-R10-K3-T3-Q100-9.txt");
+  PDPTWT problem = parse("../data/PDPT/PDPT-R25-K2-T2/PDPT-R25-K2-T2-Q100-2.txt");
 
 
   cout << "Problem Information:" << endl;
@@ -64,6 +64,17 @@ alns.set_algorithm_visitor(visitor);
   cout << "Time Spent: " << duration.count() << " Microseconds" << endl;
   // Print details
   best_sol.print_solution();
+
+  cout << "Transfers: " << endl;
+
+  for(int j = 0; j < best_sol.problem->vehicle_amount; j++){
+    for(int i = 0; i < best_sol.routes[j].transshipment_actions.size(); i++){
+      cout << "Vehicle: " << j << endl;
+      cout << "Request: " << std::get<0>(best_sol.routes[j].transshipment_actions[i])->id << endl;
+      cout << "Transshipment Node: " << std::get<1>(best_sol.routes[j].transshipment_actions[i])->id << endl;
+      cout << "Picked Up or Delivered: " << std::get<2>(best_sol.routes[j].transshipment_actions[i]) << endl;
+      cout << endl;
+}}
 
   return 0;
 }

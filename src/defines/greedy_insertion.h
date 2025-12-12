@@ -70,14 +70,34 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
                       for(int i2 = 1; i2 <= sol.routes[v2].stops.size(); i2++){
                         for(int j2 = i2 + 1; j2 <= sol.routes[v2].stops.size(); j2++){
 
+
+                          int v1_action_index = 0;
+                          for(int k = 0; k < j; k++){
+                              // Count how many transfer nodes appear before our insertion point 'j'
+                              if(current_solution.routes[v1].stops[k]->node_type == 't') v1_action_index++;
+                          }
+
+
+                          int v2_action_index = 0;
+                          for(int k = 0; k < i2; k++){
+                              if(current_solution.routes[v2].stops[k]->node_type == 't') v2_action_index++;
+                          }
+
+
                           // TODO: Make this more readable.
                           current_solution.routes[v1].stops.insert(current_solution.routes[v1].stops.begin() + i, request->origin);
                           current_solution.routes[v1].stops.insert(current_solution.routes[v1].stops.begin() + j, trans_node);
-                          current_solution.routes[v1].transshipment_actions.push_back(std::make_tuple(request->origin, trans_node, 0));
+                          current_solution.routes[v1].transshipment_actions.insert(
+                              current_solution.routes[v1].transshipment_actions.begin() + v1_action_index, 
+                              std::make_tuple(request->origin, trans_node, 0)
+                          );
 
                           current_solution.routes[v2].stops.insert(current_solution.routes[v2].stops.begin() + i2, trans_node);
                           current_solution.routes[v2].stops.insert(current_solution.routes[v2].stops.begin() + j2, request->destination);
-                          current_solution.routes[v2].transshipment_actions.push_back(std::make_tuple(request->origin, trans_node, 1));
+                          current_solution.routes[v2].transshipment_actions.insert(
+                              current_solution.routes[v2].transshipment_actions.begin() + v2_action_index, 
+                              std::make_tuple(request->origin, trans_node, 1)
+                          );
 
 
                           current_cost = current_solution.getCost();
@@ -86,7 +106,6 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
                             best_with_transfer = current_cost;
                             best_with_transfer_sol = current_solution;
                             assigned = true;
-                            std::cout<< "YES!";
                           }
 
                           current_solution.routes[v1].stops.erase(current_solution.routes[v1].stops.begin() + j);
@@ -95,8 +114,8 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
                           current_solution.routes[v2].stops.erase(current_solution.routes[v2].stops.begin() + j2);
                           current_solution.routes[v2].stops.erase(current_solution.routes[v2].stops.begin() + i2);
 
-                          current_solution.routes[v1].transshipment_actions.pop_back();
-                          current_solution.routes[v2].transshipment_actions.pop_back();
+                          current_solution.routes[v1].transshipment_actions.erase(current_solution.routes[v1].transshipment_actions.begin() + v1_action_index);
+                          current_solution.routes[v2].transshipment_actions.erase(current_solution.routes[v2].transshipment_actions.begin() + v2_action_index);
                         }
                       }
                     }

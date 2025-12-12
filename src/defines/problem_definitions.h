@@ -158,6 +158,10 @@ class Route{
 
     const PDPTWT* problem;
     std::vector<Node*> stops;
+    // First Node = Pickup Node of the Request.
+    // Second Node = Transshipment Node.
+    // if 1: Picked up, if 0: Dropped Off.
+    // Transshipment actions are ordered in the same way they're visited.
     std::vector<std::tuple<Node*, Node*, bool>> transshipment_actions;    
 
     Route(
@@ -182,18 +186,25 @@ class Route{
     }
 
 
-      bool _check_timing() const{
+      bool _check_timing(Node* last_node = nullptr, int cnt = 0) const{
         float current_time = 0;
-        // Added safety check
         if(stops.size() == 0) return true;
 
         for (int i = 0; i < stops.size() - 1; i++) {
-            current_time += problem->get_distance(stops[i], stops[i+1]);
+          // Check if the target node has been reached.
+          if(last_node){
+            if(stops[i] == last_node){
+              if(cnt == 0) break;
+              else cnt++;
+            }
+          }
 
-            if(current_time < stops[i+1]->earliest_tw || current_time > stops[i+1]->latest_tw)
-              return false;
+          current_time += problem->get_distance(stops[i], stops[i+1]);
+
+          if(current_time < stops[i+1]->earliest_tw || current_time > stops[i+1]->latest_tw)
+            return false;
         }
-        
+
         return true;
       }
 
@@ -219,17 +230,13 @@ class Route{
             
             for(int j = 0; j < transshipment_actions.size(); j++){
               if(
-                std::get<1>(transshipment_actions[j]) == pickup &&
+                std::get<0>(transshipment_actions[j]) == pickup &&
                 std::get<2>(transshipment_actions[j]) == true
               ){
                 for(int k = 0; k < i; k++){
-                  if(std::get<0>(transshipment_actions[j]) == stops[k]) {
+                  if(stops[k] == std::get<1>(transshipment_actions[j]))
                     transshipment_was_visited = true;
-                    break;
-                  }
                 }
-                
-                if (transshipment_was_visited) break;
               }
             }
 
@@ -279,29 +286,33 @@ class Route{
                     if(!has_item) return false; // FAIL: Dropping phantom package
                 }
             }
+          }
         }
-    }
 
     return true;
 }
 
       // Get the value of load change visiting a certain node will cause.
-      int _get_load_change(Node* stop) const{
+      int _get_load_change(Node* stop, int index = 0) const{
         if(stop->node_type != 't'){return stop->load;}
 
         else{
+          int cnt = 0;
           for(int i = 0; i < transshipment_actions.size(); i++){
-            if(std::get<0>(transshipment_actions[i]) == stop){
+            if(std::get<1>(transshipment_actions[i]) == stop){
+              if(cnt == index){
 
               if(std::get<2>(transshipment_actions[i]))
-                return std::get<1>(transshipment_actions[i])->load;
+                return std::get<0>(transshipment_actions[i])->load;
 
-              return std::get<1>(transshipment_actions[i])->pair_node->load;
+              return std::get<0>(transshipment_actions[i])->pair_node->load;
             }
-          }
+            else cnt++;
+          }  
+        }
         }
         
-        return -99999;
+        return 999999;
       }
 
 };
