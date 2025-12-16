@@ -64,6 +64,7 @@ class Vehicle{
       origin = origin_node;
       destination = destination_node;
     }
+
 };
 
 
@@ -84,7 +85,6 @@ class Request{
         // Two requests are equal if they have the same origin and destination
         return (origin == other.origin && destination == other.destination);
     }
-
 };
 
 
@@ -152,6 +152,13 @@ class PDPTWT{
     
 };
 
+class Stop{
+  public:
+    Node* node;
+    Request* request;
+    bool pickup_or_dropoff; // 1 if pickup, 0 if dropoff
+
+};
 
 class Route{
   public:
@@ -185,19 +192,42 @@ class Route{
         return total;
     }
 
+    // Returns the arrival time at the specified visit of the node.
+    // Returns -1.0 if the node/visit is not found.
+    float get_arrival_time(Node* target_node, int visit_index = 0) const {
+        float current_time = 0.0;
+        
+        // Starting from depot (stops[0])
+        // Assuming stops[0] is at time 0. If distinct start times exist, add them here.
+        
+        int current_visit = 0;
 
-      bool _check_timing(Node* last_node = nullptr, int cnt = 0) const{
+        // Check if the first node (depot) is the target
+        if (stops.size() > 0 && stops[0] == target_node) {
+            if (current_visit == visit_index) return current_time;
+            current_visit++;
+        }
+
+        for (int i = 0; i < stops.size() - 1; i++) {
+            // Add travel time to next node
+            current_time += problem->get_distance(stops[i], stops[i+1]);
+
+            // Check if the next node is our target
+            if (stops[i+1] == target_node) {
+                if (current_visit == visit_index) {
+                    return current_time;
+                }
+                current_visit++;
+            }
+        }
+        return -1.0; // Target visit not found
+    }
+
+      bool _check_timing() const{
         float current_time = 0;
         if(stops.size() == 0) return true;
 
         for (int i = 0; i < stops.size() - 1; i++) {
-          // Check if the target node has been reached.
-          if(last_node){
-            if(stops[i] == last_node){
-              if(cnt == 0) break;
-              else cnt++;
-            }
-          }
 
           current_time += problem->get_distance(stops[i], stops[i+1]);
 
@@ -316,5 +346,6 @@ class Route{
       }
 
 };
+
 
 #endif

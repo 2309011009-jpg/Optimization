@@ -1,11 +1,3 @@
-/* 
-TODO: Random Removal
-
-This heuristic randomly selects
-r% of the requests to be removed from the current
-solution.
-*/
-
 #include "problem_definitions.h"
 #include "alns_definitions.h"
 #include <vector>

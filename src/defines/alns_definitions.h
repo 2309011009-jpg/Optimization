@@ -65,44 +65,49 @@ class PDPTWT_solution{
     }
 
 
-    void remove_request(const Request& request){ // TODO: AI generated, fix asap.
+    void remove_request(const Request& request) { // TODO AI generated, fix asap
+    for(int i = 0; i < routes.size(); i++){
+        Route* current_route = &routes[i];
 
-  for(int i = 0; i < routes.size(); i++){
-    Route* current_route = &routes[i];
-
-    // 1. Remove Origin and Destination from stops (Standard logic)
-    // Iterate backwards to avoid index skipping issues
-    for(int j = current_route->stops.size() - 1; j >= 0; j--){
-      if(current_route->stops[j] == request.origin || current_route->stops[j] == request.destination){
-        current_route->stops.erase(current_route->stops.begin() + j);
-      }
-    }
-
-    // 2. Remove Transshipment Actions AND their corresponding Stops
-    // Iterate backwards to safely erase
-    for(int j = current_route->transshipment_actions.size() - 1; j >= 0; j--){
-      
-      // Check if this action belongs to the request being removed
-      // (Index 0 of tuple is always the Request Origin / ID)
-      if(std::get<0>(current_route->transshipment_actions[j]) == request.origin){
-
-        // Identify the node used in this action
-        Node* trans_node = std::get<1>(current_route->transshipment_actions[j]);
-
-        // A. Remove EXACTLY ONE instance of this node from the stops.
-        // We search for the first occurrence. Since your logic duplicates pointers (55 - 55),
-        // removing the first matching pointer is perfectly fine.
-        auto it = std::find(current_route->stops.begin(), current_route->stops.end(), trans_node);
-        
-        if (it != current_route->stops.end()) {
-            current_route->stops.erase(it);
+        // 1. Remove Origin and Destination from stops
+        for(int j = current_route->stops.size() - 1; j >= 0; j--){
+            if(current_route->stops[j] == request.origin || current_route->stops[j] == request.destination){
+                current_route->stops.erase(current_route->stops.begin() + j);
+            }
         }
 
-        // B. Remove the action itself
-        current_route->transshipment_actions.erase(current_route->transshipment_actions.begin() + j);
-      }
+        // 2. Remove Transshipment Actions AND their corresponding Stops
+        // We iterate backwards to keep indices valid for previous elements
+        for(int j = current_route->transshipment_actions.size() - 1; j >= 0; j--){
+      
+            // Check if this action belongs to the request being removed
+            if(std::get<0>(current_route->transshipment_actions[j]) == request.origin){
+
+                // CRITICAL FIX: Do NOT use std::find. 
+                // Find the j-th 't' node in the stops vector.
+                
+                int t_count = -1;
+                int stop_index_to_remove = -1;
+
+                for(int k = 0; k < current_route->stops.size(); k++){
+                    if(current_route->stops[k]->node_type == 't'){
+                        t_count++;
+                        if(t_count == j){
+                            stop_index_to_remove = k;
+                            break;
+                        }
+                    }
+                }
+
+                if(stop_index_to_remove != -1){
+                    current_route->stops.erase(current_route->stops.begin() + stop_index_to_remove);
+                }
+
+                // Remove the action itself
+                current_route->transshipment_actions.erase(current_route->transshipment_actions.begin() + j);
+            }
+        }
     }
-  }
 }
 
 
@@ -173,7 +178,7 @@ bool _precedence_check() const{ // Check if pickup was visited before delivery.
 
             // NOTE: Assuming routes[i]._check_timing is a function that returns float
             // and has been defined to accept (Node*, int index).
-            float arrival_time = routes[i]._check_timing(std::get<1>(routes[i].transshipment_actions[j]), index_of_visit - 1); // Pass 0-based index
+            float arrival_time = routes[i].get_arrival_time(std::get<1>(routes[i].transshipment_actions[j]), index_of_visit - 1); // Pass 0-based index
             
             // tuple<Node*, Node*, bool> dropoff_action; // Removed tuple declaration here to avoid syntax error
             float drop_time = -1.0;
@@ -187,6 +192,7 @@ bool _precedence_check() const{ // Check if pickup was visited before delivery.
               for(int k = 0; k < routes[v].transshipment_actions.size(); k++){ // Find the associated dropoff action.
                 if(
                   std::get<0>(routes[v].transshipment_actions[k]) == std::get<0>(routes[i].transshipment_actions[j]) &&
+                  std::get<1>(routes[v].transshipment_actions[k]) == std::get<1>(routes[i].transshipment_actions[j]) &&
                   std::get<2>(routes[v].transshipment_actions[k]) == 0
                 ){
                   // We don't need to store the action, just its index is enough to proceed
@@ -210,7 +216,7 @@ bool _precedence_check() const{ // Check if pickup was visited before delivery.
                 } // Correct closing bracket
 
                 // NOTE: Assuming routes[v]._check_timing is available
-                drop_time = routes[v]._check_timing(drop_node, drop_visit_index - 1);
+                drop_time = routes[v].get_arrival_time(drop_node, drop_visit_index - 1);
                 
                 // The structure for finding drop time is complex; this break is necessary to prevent recalculation.
                 break;

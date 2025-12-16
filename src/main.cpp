@@ -20,7 +20,14 @@ using namespace mlpalns;
 int main(){
   // ../data/PDPT/PDPT-R25-K2-T2/PDPT-R25-K2-T2-Q100-2.txt
   PDPTWT problem = parse("../data/PDPT/PDPT-R25-K2-T2/PDPT-R25-K2-T2-Q100-2.txt");
+  /* STUCK ON:
 
+  ../data/PDPT/PDPT-R5-K2-T1/PDPT-R5-K2-T1-Q100-2.txt
+  ../data/PDPT/PDPT-R5-K2-T1/PDPT-R5-K2-T1-Q100-3.txt
+  ../data/PDPT/PDPT-R5-K2-T1/PDPT-R5-K2-T1-Q100-8.txt
+  ../data/PDPT/PDPT-R5-K2-T1/PDPT-R5-K2-T1-Q100-9.txt
+  
+  */
 
   cout << "Problem Information:" << endl;
   cout << "Node Amount: " << problem.node_amount << endl;
