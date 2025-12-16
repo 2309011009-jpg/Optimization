@@ -34,15 +34,16 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
           for(int i = 1; i <= route_of_v->stops.size(); i++){ // Try Every Combination
             for(int j = i + 1; j <= route_of_v->stops.size(); j++){
 
-              route_of_v->stops.insert(route_of_v->stops.begin() + i, request->origin);
-              route_of_v->stops.insert(route_of_v->stops.begin() + j, request->destination);
+              route_of_v->insert_stop(i, request->origin, request, true);
+              route_of_v->insert_stop(j, request->destination, request, false);
+
+              current_solution.unassigned[r] = false;
 
               current_cost = current_solution.getCost();
 
               if(current_cost < best_without_transfer && current_solution.is_feasible()){
                 best_without_transfer = current_cost;
                 best_without_transfer_sol = current_solution;
-                assigned = true;
               }
 
               route_of_v->stops.erase(route_of_v->stops.begin() + j);
@@ -58,64 +59,41 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
 
             for(int v1 = 0; v1 < sol.problem->vehicle_amount; v1++){ // Per Vehicle Combination.
               Vehicle* vehicle1 = &sol.problem->vehicles[v1];
+              Route* route1 = &current_solution.routes[v1];
 
               for(int v2 = 0; v2 < sol.problem->vehicle_amount; v2++){
                 Vehicle* vehicle2 = &sol.problem->vehicles[v2];
+                Route* route2 = &current_solution.routes[v2];
 
                 // Make sure they're not the same vehicle.
                 if(vehicle1 != vehicle2){ 
-                  for(int i = 1; i <= sol.routes[v1].stops.size(); i++){
-                    for(int j = i + 1; j <= sol.routes[v1].stops.size(); j++){
+                  for(int i = 1; i <= route1->stops.size(); i++){
+                    for(int j = i + 1; j <= route1->stops.size(); j++){
 
-                      for(int i2 = 1; i2 <= sol.routes[v2].stops.size(); i2++){
-                        for(int j2 = i2 + 1; j2 <= sol.routes[v2].stops.size(); j2++){
-
-
-                          int v1_action_index = 0;
-                          for(int k = 0; k < j; k++){
-                              // Count how many transfer nodes appear before our insertion point 'j'
-                              if(current_solution.routes[v1].stops[k]->node_type == 't') v1_action_index++;
-                          }
-
-
-                          int v2_action_index = 0;
-                          for(int k = 0; k < i2; k++){
-                              if(current_solution.routes[v2].stops[k]->node_type == 't') v2_action_index++;
-                          }
-
+                      for(int i2 = 1; i2 <= route2->stops.size(); i2++){
+                        for(int j2 = i2 + 1; j2 <= route2->stops.size(); j2++){
 
                           // TODO: Make this more readable.
-                          current_solution.routes[v1].stops.insert(current_solution.routes[v1].stops.begin() + i, request->origin);
-                          current_solution.routes[v1].stops.insert(current_solution.routes[v1].stops.begin() + j, trans_node);
-                          current_solution.routes[v1].transshipment_actions.insert(
-                              current_solution.routes[v1].transshipment_actions.begin() + v1_action_index, 
-                              std::make_tuple(request->origin, trans_node, 0)
-                          );
+                          route1->insert_stop(i, request->origin, request, 1);
+                          route1->insert_stop(j, trans_node, request, 0);
 
-                          current_solution.routes[v2].stops.insert(current_solution.routes[v2].stops.begin() + i2, trans_node);
-                          current_solution.routes[v2].stops.insert(current_solution.routes[v2].stops.begin() + j2, request->destination);
-                          current_solution.routes[v2].transshipment_actions.insert(
-                              current_solution.routes[v2].transshipment_actions.begin() + v2_action_index, 
-                              std::make_tuple(request->origin, trans_node, 1)
-                          );
+                          route2->insert_stop(i2, trans_node, request, 1);
+                          route2->insert_stop(j2, request->destination, request, 0);
 
+                          current_solution.unassigned[r] = false;
 
                           current_cost = current_solution.getCost();
-
                           if(current_cost < best_with_transfer && current_solution.is_feasible()){
                             best_with_transfer = current_cost;
                             best_with_transfer_sol = current_solution;
-                            assigned = true;
                           }
 
-                          current_solution.routes[v1].stops.erase(current_solution.routes[v1].stops.begin() + j);
-                          current_solution.routes[v1].stops.erase(current_solution.routes[v1].stops.begin() + i);
+                          route1->stops.erase(route1->stops.begin() + j);
+                          route1->stops.erase(route1->stops.begin() + i);
 
-                          current_solution.routes[v2].stops.erase(current_solution.routes[v2].stops.begin() + j2);
-                          current_solution.routes[v2].stops.erase(current_solution.routes[v2].stops.begin() + i2);
+                          route2->stops.erase(route2->stops.begin() + j2);
+                          route2->stops.erase(route2->stops.begin() + i2);
 
-                          current_solution.routes[v1].transshipment_actions.erase(current_solution.routes[v1].transshipment_actions.begin() + v1_action_index);
-                          current_solution.routes[v2].transshipment_actions.erase(current_solution.routes[v2].transshipment_actions.begin() + v2_action_index);
                         }
                       }
                     }
@@ -129,9 +107,6 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
         if(best_with_transfer < best_without_transfer)
           sol = best_with_transfer_sol;
         else sol = best_without_transfer_sol;
-
-        if(assigned)
-          sol.unassigned[r] = false;
       }
     }
   }

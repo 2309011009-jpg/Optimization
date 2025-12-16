@@ -16,36 +16,20 @@ class Node{
     int id;
     int x;
     int y;
-    char node_type; // o, e, p, d, t
-    int load;
+    char type; // o, e, p, d, t
     int earliest_tw;
     int latest_tw;
-    Node* pair_node;
 
     Node(
-      int id_t = 0,
-      int horizontal = 0,
-      int vertical = 0,
+      int id = 0,
+      int x = 0,
+      int y = 0,
       char type = '!',
-      int load_amount = 0,
-      int earliest = 0,
-      int latest = 0,
-      Node* pair = nullptr
-    ){
-      id = id_t;
-      x = horizontal;
-      y = vertical;
-      node_type = type;
-      load = load_amount;
-      earliest_tw = earliest;
-      latest_tw = latest;
-      pair_node = pair;
-    }
+      int earliest_tw = 0,
+      int latest_tw = 0
+    ) : id(id), x(x), y(y), type(type), earliest_tw(earliest_tw), latest_tw(latest_tw)
+    {}
 
-    void add_pair(Node* pair){
-      pair_node = pair;
-      pair_node->pair_node = this;
-    }
 };
 
 
@@ -56,35 +40,30 @@ class Vehicle{
     Node* destination;
 
     Vehicle(
-      int max = 0, 
-      Node* origin_node = nullptr, 
-      Node* destination_node = nullptr
-    ){
-      capacity = max;
-      origin = origin_node;
-      destination = destination_node;
-    }
+      int capacity = 0, 
+      Node* origin = nullptr, 
+      Node* destination = nullptr
+    ) : capacity(capacity), origin(origin), destination(destination)
+    {}
 
 };
 
 
 class Request{
   public:
+    int id;
     Node* origin;
     Node* destination;
+    int load; // Always positive.
   
     Request(
-      Node* origin_node = nullptr, 
-      Node* destination_node = nullptr
-    ){
-      origin = origin_node;
-      destination = destination_node;
-    }
+      int id,
+      Node* origin, 
+      int load,
+      Node* destination = nullptr
+    ): id(id), origin(origin), destination(destination), load(load)
+    {}
 
-    bool operator==(const Request& other) const {
-        // Two requests are equal if they have the same origin and destination
-        return (origin == other.origin && destination == other.destination);
-    }
 };
 
 
@@ -134,11 +113,6 @@ class PDPTWT{
 
       distance_matrix = distances;
     }
-    
-    ~PDPTWT() {
-    //delete[] distance_matrix; TODO: Double free here for unknown reasons
-    }
-
 
     inline float get_distance(Node* from_node, Node* to_node) const {
       return distance_matrix[from_node->id* node_amount + to_node->id];
@@ -152,198 +126,114 @@ class PDPTWT{
     
 };
 
+
 class Stop{
   public:
     Node* node;
-    Request* request;
+    const Request* request;
     bool pickup_or_dropoff; // 1 if pickup, 0 if dropoff
 
+  Stop(
+    Node* node,
+    const Request* request,
+    bool  pickup_or_dropoff
+  ) : node(node), request(request), pickup_or_dropoff(pickup_or_dropoff)
+  {}
+
+  int get_load_change(){
+    if(request != nullptr){
+      if(pickup_or_dropoff == true) return request->load;
+      return -request->load;
+    }
+
+    return 0;
+  }
+  
+  
+  bool operator==(Stop stop) const {
+
+    if(
+      node == stop.node 
+      && 
+      request == stop.request 
+      && 
+      pickup_or_dropoff == stop.pickup_or_dropoff
+    ) return true;
+
+    return false;
+  }
+
 };
+
 
 class Route{
   public:
 
     const PDPTWT* problem;
-    std::vector<Node*> stops;
-    // First Node = Pickup Node of the Request.
-    // Second Node = Transshipment Node.
-    // if 1: Picked up, if 0: Dropped Off.
-    // Transshipment actions are ordered in the same way they're visited.
-    std::vector<std::tuple<Node*, Node*, bool>> transshipment_actions;    
+    std::vector<Stop> stops;
 
     Route(
-      const PDPTWT& problem_inst,
-      std::vector<Node*> node_arr,
-      std::vector<std::tuple<Node*, Node*, bool>> tr_actions = {}
-    ){
-      problem = &problem_inst;
-      stops = node_arr;
-      transshipment_actions = tr_actions;
+      const PDPTWT& problem
+    ) : problem(&problem)
+    {}
+
+
+    void insert_stop(int index, Node* node, const Request* request, bool pickup_or_dropoff){
+      stops.insert(stops.begin() +  index, Stop(node, request, pickup_or_dropoff));
     }
 
+    void erase_stop(int index){
+      stops.erase(stops.begin() + index);
+    }
 
     float calculate_cost() const{
         float total = 0;
 
         for (int i = 0; i < stops.size() - 1; i++) {
-            total += problem->get_distance(stops[i], stops[i+1]);
+            total += problem->get_distance(stops[i].node, stops[i+1].node);
         }
         
         return total;
     }
 
-    // Returns the arrival time at the specified visit of the node.
-    // Returns -1.0 if the node/visit is not found.
-    float get_arrival_time(Node* target_node, int visit_index = 0) const {
-        float current_time = 0.0;
-        
-        // Starting from depot (stops[0])
-        // Assuming stops[0] is at time 0. If distinct start times exist, add them here.
-        
-        int current_visit = 0;
 
-        // Check if the first node (depot) is the target
-        if (stops.size() > 0 && stops[0] == target_node) {
-            if (current_visit == visit_index) return current_time;
-            current_visit++;
-        }
+    float get_arrival_time(const Stop& stop) const{
 
-        for (int i = 0; i < stops.size() - 1; i++) {
-            // Add travel time to next node
-            current_time += problem->get_distance(stops[i], stops[i+1]);
+      if(stops[0] == stop) return 0;
 
-            // Check if the next node is our target
-            if (stops[i+1] == target_node) {
-                if (current_visit == visit_index) {
-                    return current_time;
-                }
-                current_visit++;
-            }
-        }
-        return -1.0; // Target visit not found
+      float current_time = 0.0;
+      for(int i = 0; i < stops.size() - 1; i++){
+
+        current_time += problem->get_distance(stops[i].node, stops[i + 1].node);
+
+        if(stops[i + 1] == stop)
+          return current_time;
+
+      }
+
+      //
+      return 9999999;
     }
 
-      bool _check_timing() const{
-        float current_time = 0;
-        if(stops.size() == 0) return true;
 
-        for (int i = 0; i < stops.size() - 1; i++) {
+    bool check_timing() const {
 
-          current_time += problem->get_distance(stops[i], stops[i+1]);
+      float current_time = 0.0;
+      for(int i = 0; i < stops.size() - 1; i++){
 
-          if(current_time < stops[i+1]->earliest_tw || current_time > stops[i+1]->latest_tw)
-            return false;
-        }
+        current_time += problem->get_distance(stops[i].node, stops[i + 1].node);
 
-        return true;
+        if(
+          current_time < stops[i].node->earliest_tw
+          ||
+          current_time > stops[i].node->latest_tw 
+        )
+          return false;
+
       }
 
-
-      bool _check_precedence() const{
-        for(int i = 0; i < stops.size(); i++){
-          if(stops[i]->node_type == 'd'){
-            Node* pickup = stops[i]->pair_node;
-            bool pickup_was_visited = false;
-
-            // Check if Pickup node was visited previously.
-            for(int j = 0; j < i; j++){
-              if(stops[j] == pickup){
-                pickup_was_visited = true;
-                break;
-              }
-            }
-
-            if(pickup_was_visited){continue;}
-
-            // Check if the load has been picked up from a transshipment node previously.
-            bool transshipment_was_visited = false;
-            
-            for(int j = 0; j < transshipment_actions.size(); j++){
-              if(
-                std::get<0>(transshipment_actions[j]) == pickup &&
-                std::get<2>(transshipment_actions[j]) == true
-              ){
-                for(int k = 0; k < i; k++){
-                  if(stops[k] == std::get<1>(transshipment_actions[j]))
-                    transshipment_was_visited = true;
-                }
-              }
-            }
-
-            if(!transshipment_was_visited){return false;}
-          }
-
-          // --- CASE 2: Transfer Drop (NEW LOGIC) ---
-          else if(stops[i]->node_type == 't'){
-            
-            // We need to check all actions happening at THIS transfer node
-            for(auto& action : transshipment_actions){
-                Node* req_origin = std::get<0>(action);
-                Node* t_node = std::get<1>(action);
-                bool is_pickup = std::get<2>(action); // 0 = Drop, 1 = Pickup
-
-                // If this action is a DROP occurring at the current stop
-                if(t_node == stops[i] && is_pickup == false){
-                    
-                    bool has_item = false;
-
-                    // Check A: Did we visit the Origin (Source) previously?
-                    for(int prev = 0; prev < i; prev++){
-                        if(stops[prev] == req_origin) {
-                            has_item = true; 
-                            break;
-                        }
-                    }
-
-                    // Check B: Did we pick it up from ANOTHER transfer node previously?
-                    if(!has_item){
-                        for(int prev = 0; prev < i; prev++){
-                            // Iterate previous stops to find a Transfer Pickup for this SAME request
-                            if(stops[prev]->node_type == 't'){
-                                for(auto& prev_action : transshipment_actions){
-                                    if(std::get<0>(prev_action) == req_origin && // Same Request
-                                       std::get<1>(prev_action) == stops[prev] && // At that previous stop
-                                       std::get<2>(prev_action) == true) {        // It was a Pickup
-                                        has_item = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if(has_item) break;
-                        }
-                    }
-
-                    if(!has_item) return false; // FAIL: Dropping phantom package
-                }
-            }
-          }
-        }
-
-    return true;
-}
-
-      // Get the value of load change visiting a certain node will cause.
-      int _get_load_change(Node* stop, int index = 0) const{
-        if(stop->node_type != 't'){return stop->load;}
-
-        else{
-          int cnt = 0;
-          for(int i = 0; i < transshipment_actions.size(); i++){
-            if(std::get<1>(transshipment_actions[i]) == stop){
-              if(cnt == index){
-
-              if(std::get<2>(transshipment_actions[i]))
-                return std::get<0>(transshipment_actions[i])->load;
-
-              return std::get<0>(transshipment_actions[i])->pair_node->load;
-            }
-            else cnt++;
-          }  
-        }
-        }
-        
-        return 999999;
-      }
+      return true;
+    }
 
 };
 

@@ -23,9 +23,6 @@ int main(){
   /* STUCK ON:
 
   ../data/PDPT/PDPT-R5-K2-T1/PDPT-R5-K2-T1-Q100-2.txt
-  ../data/PDPT/PDPT-R5-K2-T1/PDPT-R5-K2-T1-Q100-3.txt
-  ../data/PDPT/PDPT-R5-K2-T1/PDPT-R5-K2-T1-Q100-8.txt
-  ../data/PDPT/PDPT-R5-K2-T1/PDPT-R5-K2-T1-Q100-9.txt
   
   */
 
@@ -35,7 +32,7 @@ int main(){
   cout << "Vehicle Capacity: " << problem.vehicles[0].capacity << endl;
 
   for(int i = 0; i < problem.node_amount; i++){
-    cout << problem.nodes[i].id << " --- " << problem.nodes[i].node_type << endl;
+    cout << problem.nodes[i].id << " --- " << problem.nodes[i].type << endl;
   }
 
   auto alns = PALNS<PDPTWT, PDPTWT_solution>{problem};
@@ -45,7 +42,7 @@ int main(){
 
   PDPTWT_solution initial_sol = creator.create_initial_solution(problem, rng);
   initial_sol.print_solution();
-
+  
   RandomRemoval random_removal;
   alns.add_destroy_method(random_removal, "Remove Randomly");
 
@@ -63,7 +60,7 @@ alns.set_algorithm_visitor(visitor);
 
   cout << endl << "SOLUTION STARTING" << endl;
   auto start = high_resolution_clock::now();
-  PDPTWT_solution best_sol = alns.go(initial_sol, 8, params);
+  PDPTWT_solution best_sol = alns.go(initial_sol, 16, params);
   auto stop = high_resolution_clock::now();
   cout << "--- Finished ---" << endl;
   cout << "Best Cost: " << best_sol.getCost() << endl;
@@ -71,17 +68,5 @@ alns.set_algorithm_visitor(visitor);
   cout << "Time Spent: " << duration.count() << " Microseconds" << endl;
   // Print details
   best_sol.print_solution();
-
-  cout << "Transfers: " << endl;
-
-  for(int j = 0; j < best_sol.problem->vehicle_amount; j++){
-    for(int i = 0; i < best_sol.routes[j].transshipment_actions.size(); i++){
-      cout << "Vehicle: " << j << endl;
-      cout << "Request: " << std::get<0>(best_sol.routes[j].transshipment_actions[i])->id << endl;
-      cout << "Transshipment Node: " << std::get<1>(best_sol.routes[j].transshipment_actions[i])->id << endl;
-      cout << "Picked Up or Delivered: " << std::get<2>(best_sol.routes[j].transshipment_actions[i]) << endl;
-      cout << endl;
-}}
-
   return 0;
 }

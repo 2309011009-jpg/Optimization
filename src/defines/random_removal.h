@@ -12,7 +12,7 @@ struct RandomRemoval: public DestroyMethod<PDPTWT_solution> {
 
         int request_index = rand() % solution.problem->requests.size();
 
-        solution.remove_request(solution.problem->requests[request_index]);
+        solution.remove_request(&solution.problem->requests[request_index]);
         solution.unassigned[request_index] = true;
 
     }

@@ -23,17 +23,23 @@ class PDPTWT_solution{
       problem = &problem_instance;
 
       for(int i = 0; i < problem->vehicle_amount; i++){
-        // Initiate a route per vehicle with only the origin & destination.
-        std::vector<Node*> route_stops;
-        route_stops.push_back(problem->vehicles[i].origin);
-        route_stops.push_back(problem->vehicles[i].destination);
 
-        routes.push_back(Route(problem_instance, route_stops)); 
+        // Initiate a route per vehicle with only the origin & destination.
+        Stop origin(problem->vehicles[i].origin, nullptr, 0);
+        Stop destination(problem->vehicles[i].destination, nullptr, 0);
+        
+        Route new_route = Route(problem_instance);
+
+        new_route.stops.push_back(origin);
+        new_route.stops.push_back(destination);
+
+        routes.push_back(new_route);
       }
 
       for(int i = 0; i < problem->requests.size(); i++){
         unassigned.push_back(true);
       }
+
     }
 
     float getCost() const{
@@ -64,51 +70,20 @@ class PDPTWT_solution{
       return true;
     }
 
-
-    void remove_request(const Request& request) { // TODO AI generated, fix asap
-    for(int i = 0; i < routes.size(); i++){
-        Route* current_route = &routes[i];
-
-        // 1. Remove Origin and Destination from stops
-        for(int j = current_route->stops.size() - 1; j >= 0; j--){
-            if(current_route->stops[j] == request.origin || current_route->stops[j] == request.destination){
-                current_route->stops.erase(current_route->stops.begin() + j);
-            }
+    // TODO : Erase-Remove maybe?
+    void remove_request(const Request* request) {
+    
+      // Check all stops and remove any associated stops.
+      for(int i = 0; i < routes.size(); i++){
+        for(int j = 0; j < routes[i].stops.size();){
+          
+          if(routes[i].stops[j].request == request){
+            routes[i].stops.erase(routes[i].stops.begin() + j);
+          }
+          else j++;
         }
-
-        // 2. Remove Transshipment Actions AND their corresponding Stops
-        // We iterate backwards to keep indices valid for previous elements
-        for(int j = current_route->transshipment_actions.size() - 1; j >= 0; j--){
-      
-            // Check if this action belongs to the request being removed
-            if(std::get<0>(current_route->transshipment_actions[j]) == request.origin){
-
-                // CRITICAL FIX: Do NOT use std::find. 
-                // Find the j-th 't' node in the stops vector.
-                
-                int t_count = -1;
-                int stop_index_to_remove = -1;
-
-                for(int k = 0; k < current_route->stops.size(); k++){
-                    if(current_route->stops[k]->node_type == 't'){
-                        t_count++;
-                        if(t_count == j){
-                            stop_index_to_remove = k;
-                            break;
-                        }
-                    }
-                }
-
-                if(stop_index_to_remove != -1){
-                    current_route->stops.erase(current_route->stops.begin() + stop_index_to_remove);
-                }
-
-                // Remove the action itself
-                current_route->transshipment_actions.erase(current_route->transshipment_actions.begin() + j);
-            }
-        }
+      }
     }
-}
 
 
     void print_solution(){
@@ -116,11 +91,24 @@ class PDPTWT_solution{
       cout << endl << "Route of Vehicle " << i << " : ";
 
       for(int j = 0; j < routes[i].stops.size(); j++){
-        cout << routes[i].stops[j]->id << " - "; 
+        cout << routes[i].stops[j].node->id << " - "; 
       }
 
       cout << "COST: " << routes[i].calculate_cost() << endl;
 
+    }
+ 
+    cout << "TRANSFERS:" << endl;
+
+    for(int i = 0; i < problem->vehicle_amount; i++){
+      for(int j = 0; j < routes[i].stops.size(); j++){
+        if(routes[i].stops[j].node->type == 't'){
+          if(routes[i].stops[j].pickup_or_dropoff){
+            cout << "Vehicle " << i << " Pickup " << routes[i].stops[j].request->id << " at " << routes[i].stops[j].node->id << " at time point: " << routes[i].get_arrival_time(routes[i].stops[j]) << endl;
+          }
+          else cout << "Vehicle " << i << " Dropoff " << routes[i].stops[j].request->id << " at " << routes[i].stops[j].node->id << " at time point: " << routes[i].get_arrival_time(routes[i].stops[j]) << endl;
+        }
+      }
     }
 
     cout << "TOTAL COST: " << getCost() << endl;
@@ -133,7 +121,7 @@ class PDPTWT_solution{
 
     bool _timing_check() const{ // Check if timing is satisfied.
       for(int i = 0; i < routes.size(); i++){
-        if(routes[i]._check_timing() == false) 
+        if(routes[i].check_timing() == false) 
           return false;
       }
 
@@ -144,9 +132,9 @@ class PDPTWT_solution{
     bool _structure_check() const{ // Check if vehicle starts from it's depot and ends in it's destination.
       for(int i = 0; i < routes.size(); i++){
         if(
-          routes[i].stops.front() != problem->vehicles[i].origin
+          routes[i].stops.front().node != problem->vehicles[i].origin
           ||
-          routes[i].stops.back() != problem->vehicles[i].destination
+          routes[i].stops.back().node != problem->vehicles[i].destination
       ){
         return false;
       }
@@ -155,123 +143,82 @@ class PDPTWT_solution{
       return true;
     }
 
-bool _precedence_check() const{ // Check if pickup was visited before delivery.
+    bool _precedence_check() const { 
+
       for(int i = 0; i < routes.size(); i++){
-        if(routes[i]._check_precedence() == false) 
-          return false;
+        auto current_stops = routes[i].stops;
+
+        for(int j = 0; j < current_stops.size(); j++){
+
+          // If dropoff, an earlier pickup must've occured.
+          if(current_stops[j].node->type == 'd'){
+            bool pickup_found = false;
+
+            // Check all previous stops.
+            for(int k = 0; k < j; k++){
+
+              if(current_stops[k].request == current_stops[j].request){
+                pickup_found = true;
+
+                // If transshipment, find it's dropoff counterpart.
+                if(current_stops[k].node->type == 't'){
+                  float arrival_at_t = routes[i].get_arrival_time(current_stops[k]);
+
+                  // Check all other route's stops.
+                  for(int r = 0; r < routes.size(); r++){
+                    auto temp = routes[r].stops;
+                    for(int s = 0; s < temp.size(); s++){
+
+                      // If the stop is for the same request
+                      if(
+                        temp[s].node == current_stops[k].node
+                        &&
+                        temp[s].request == current_stops[k].request
+                      )
+                      {
+                        // If dropoff counterpart arrived later than pickup.
+                        if(routes[r].get_arrival_time(temp[s]) > arrival_at_t) return false;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            if(pickup_found == false) return false;
+          }
+
+        }
       }
 
-      // Check if request picked up from transshipment node was delivered there before arrival.
-      for(int i = 0; i < routes.size(); i++){ // For every route.
-        for(int j = 0; j < routes[i].transshipment_actions.size(); j++){ // For every action
-          if(std::get<2>(routes[i].transshipment_actions[j])){ // If action was a pickup
-            // Check if another route dropped it before.
-            int index_of_visit = 0;
-            
-            // ERROR FIX 1: The 'for' loop body needs brackets
-            for(int k = 0; k <= j; k++){
-              // Find the transshipmen node's index.
-              if(std::get<1>(routes[i].transshipment_actions[k]) == std::get<1>(routes[i].transshipment_actions[j])){
-                index_of_visit++;
-              } // Correct closing bracket for if(k)
-            } // Correct closing bracket for for(k)
-
-            // NOTE: Assuming routes[i]._check_timing is a function that returns float
-            // and has been defined to accept (Node*, int index).
-            float arrival_time = routes[i].get_arrival_time(std::get<1>(routes[i].transshipment_actions[j]), index_of_visit - 1); // Pass 0-based index
-            
-            // tuple<Node*, Node*, bool> dropoff_action; // Removed tuple declaration here to avoid syntax error
-            float drop_time = -1.0;
-            bool drop_found = false;
-
-            for(int v = 0; v < routes.size(); v++){ // Check every other route.
-              if(v == i) continue;
-
-              int drop_action_index = -1;
-              
-              for(int k = 0; k < routes[v].transshipment_actions.size(); k++){ // Find the associated dropoff action.
-                if(
-                  std::get<0>(routes[v].transshipment_actions[k]) == std::get<0>(routes[i].transshipment_actions[j]) &&
-                  std::get<1>(routes[v].transshipment_actions[k]) == std::get<1>(routes[i].transshipment_actions[j]) &&
-                  std::get<2>(routes[v].transshipment_actions[k]) == 0
-                ){
-                  // We don't need to store the action, just its index is enough to proceed
-                  drop_action_index = k;
-                  drop_found = true;
-                  break;
-                }
-              }
-
-              if(drop_found){
-                // Calculate drop time using the found index
-                int drop_visit_index = 0;
-                Node* drop_node = std::get<1>(routes[v].transshipment_actions[drop_action_index]);
-                
-                // ERROR FIX 2: Loop to count drop visits
-                for(int k = 0; k <= drop_action_index; k++){
-                    // Find the transshipmen node's index.
-                    if(std::get<1>(routes[v].transshipment_actions[k]) == drop_node){
-                      drop_visit_index++;
-                    }
-                } // Correct closing bracket
-
-                // NOTE: Assuming routes[v]._check_timing is available
-                drop_time = routes[v].get_arrival_time(drop_node, drop_visit_index - 1);
-                
-                // The structure for finding drop time is complex; this break is necessary to prevent recalculation.
-                break;
-              }
-            } // Correct closing bracket for for(v)
-
-            // ERROR FIX 3: Bracket added around the final check
-            if(drop_found){
-                if(arrival_time < drop_time){
-                    return false; 
-                }
-            } // Correct closing bracket
-          } // Correct closing bracket for if(action was a pickup)
-        } // Correct closing bracket for for(j)
-      } // Correct closing bracket for for(i)
-
       return true;
-
     }
 
 
     bool _capacity_check() const{ // Check if any vehicle's load is bigger than it's capacity at any point.
-      int current_load;
-        for(int i = 0; i < routes.size(); i++){
-          current_load = 0;
-          std::map<Node*, int> transshipment_node_count;
-          for(int j = 0; j < routes[i].stops.size(); j ++){
-            if(routes[i].stops[j]->node_type == 't'){
-              if(transshipment_node_count.find(routes[i].stops[j]) != transshipment_node_count.end()){
-                transshipment_node_count.at(routes[i].stops[j])++;}
-              else{
-                transshipment_node_count.insert({routes[i].stops[j], 0});
-              }
+      for(int i = 0; i < routes.size(); i++){
+        int current_load = 0;
+        int capacity = problem->vehicles[i].capacity;
 
-              current_load += routes[i]._get_load_change(routes[i].stops[j], transshipment_node_count[routes[i].stops[j]]);
-            }
-            else{
-              current_load += routes[i]._get_load_change(routes[i].stops[j]);
-            }
-            
-          if(current_load > problem->vehicles[0].capacity)
-            return false;
-          }
-    }
-    return true;
-  }
+        auto current_stops = routes[i].stops;
+        for(int j = 0; j < current_stops.size(); j++){
+          current_load += current_stops[j].get_load_change();
 
+          if(current_load > capacity) return false;
+        }
+      }
 
-  bool _request_check() const{ // Check if all requests have been assigned.
-    for(int i = 0; i < problem->requests.size(); i++){
-      if(unassigned[i] == true) return false;
+      return true;
     }
 
-    return true;
-  }
+
+    bool _request_check() const{ // Check if all requests have been assigned.
+      for(int i = 0; i < problem->requests.size(); i++){
+        if(unassigned[i] == true) return false;
+      }
+
+      return true;
+    }
 
 
 
