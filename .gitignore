@@ -1,5 +1,6 @@
 Optimization.code-workspace
 .vscode/c_cpp_properties.json
 .vscode/launch.json
+.vscode/tasks.json
 src/usage
 src/main
