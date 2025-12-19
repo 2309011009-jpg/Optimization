@@ -19,7 +19,7 @@ using namespace std;
 using namespace mlpalns;
 int main(){
   // ../data/PDPT/PDPT-R25-K2-T2/PDPT-R25-K2-T2-Q100-2.txt
-  PDPTWT problem = parse("../data/PDPT/PDPT-R25-K2-T2/PDPT-R25-K2-T2-Q100-2.txt");
+  PDPTWT problem = parse("benchmarking/data/PDPT/PDPT-R30-K3-T3/PDPT-R30-K3-T3-Q100-9.txt");
   /* STUCK ON:
 
   ../data/PDPT/PDPT-R5-K2-T1/PDPT-R5-K2-T1-Q100-2.txt
