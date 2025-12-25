@@ -76,7 +76,7 @@ class PDPTWT{
     int vehicle_amount;
 
     std::vector<Request> requests;
-    float* distance_matrix;
+    double* distance_matrix;
 
     Node* transshipment_nodes;
     int transshipment_node_amount;
@@ -99,13 +99,13 @@ class PDPTWT{
       transshipment_node_amount = t_amount;
 
       // Access as distances[i*node_amount+j]
-      float *distances = new float[node_amount * node_amount];
+      double *distances = new double[node_amount * node_amount];
 
       for(int i = 0; i < node_amount; i++){
         for(int j = 0; j < node_amount; j++){
-          float temp1 = nodes[j].x - nodes[i].x;
-          float temp2 = nodes[i].y - nodes[j].y;
-          float distance = sqrt(temp1 * temp1 + temp2 * temp2);
+          double temp1 = nodes[j].x - nodes[i].x;
+          double temp2 = nodes[i].y - nodes[j].y;
+          double distance = sqrt(temp1 * temp1 + temp2 * temp2);
           distances[i*node_amount + j] = distance;
 
         }
@@ -114,7 +114,7 @@ class PDPTWT{
       distance_matrix = distances;
     }
 
-    inline float get_distance(Node* from_node, Node* to_node) const {
+    inline double get_distance(Node* from_node, Node* to_node) const {
       return distance_matrix[from_node->id* node_amount + to_node->id];
 
     }
@@ -186,22 +186,24 @@ class Route{
       stops.erase(stops.begin() + index);
     }
 
-    float calculate_cost() const{
-        float total = 0;
-
-        for (int i = 0; i < stops.size() - 1; i++) {
-            total += problem->get_distance(stops[i].node, stops[i+1].node);
-        }
+    double calculate_cost() const{
         
-        return total;
+
+      double total = 0;
+
+      for (int i = 0; i < stops.size() - 1; i++) {
+        total += problem->get_distance(stops[i].node, stops[i+1].node);
+      }
+      
+      return total;
     }
 
 
-    float get_arrival_time(const Stop& stop) const{
+    double get_arrival_time(const Stop& stop) const{
 
       if(stops[0] == stop) return 0;
 
-      float current_time = 0.0;
+      double current_time = 0.0;
       for(int i = 0; i < stops.size() - 1; i++){
 
         current_time += problem->get_distance(stops[i].node, stops[i + 1].node);
@@ -218,7 +220,7 @@ class Route{
 
     bool check_timing() const {
 
-      float current_time = 0.0;
+      double current_time = 0.0;
       for(int i = 0; i < stops.size() - 1; i++){
 
         current_time += problem->get_distance(stops[i].node, stops[i + 1].node);
@@ -231,9 +233,10 @@ class Route{
           return false;
 
       }
-
       return true;
     }
+
+
 
 };
 

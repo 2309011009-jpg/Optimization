@@ -15,7 +15,9 @@ class PDPTWT_solution{
 
     // Array of bools, signifying if the problem->request[i] is assigned or not.
     // true == unassigned, false == assigned.
-    std::vector<bool> unassigned;
+    std::vector<char> unassigned;
+
+
 
     PDPTWT_solution(
       const PDPTWT& problem_instance
@@ -25,8 +27,8 @@ class PDPTWT_solution{
       for(int i = 0; i < problem->vehicle_amount; i++){
 
         // Initiate a route per vehicle with only the origin & destination.
-        Stop origin(problem->vehicles[i].origin, nullptr, 0);
-        Stop destination(problem->vehicles[i].destination, nullptr, 0);
+        Stop origin(problem->vehicles[i].origin, nullptr, true);
+        Stop destination(problem->vehicles[i].destination, nullptr, true);
         
         Route new_route = Route(problem_instance);
 
@@ -42,20 +44,20 @@ class PDPTWT_solution{
 
     }
 
-    float getCost() const{
-      float total_cost = 0;
+    double getCost() const{
+      double total_cost = 0;
       for(int i = 0; i < routes.size(); i++){
         total_cost += routes[i].calculate_cost();
       }
 
-      float penalty = 0;
+      double penalty = 0;
 
       for(int i = 0; i < problem->requests.size(); i++){
         if(unassigned[i]) penalty += 10000;
       }
 
       if(is_feasible() == false)
-        penalty += 10000;
+        penalty += 1000000;
 
       return total_cost + penalty;
     }
@@ -151,18 +153,19 @@ class PDPTWT_solution{
         for(int j = 0; j < current_stops.size(); j++){
 
           // If dropoff, an earlier pickup must've occured.
-          if(current_stops[j].node->type == 'd'){
+          if(current_stops[j].pickup_or_dropoff == false){
             bool pickup_found = false;
 
             // Check all previous stops.
             for(int k = 0; k < j; k++){
 
+              // Find where it was picked up
               if(current_stops[k].request == current_stops[j].request){
                 pickup_found = true;
 
                 // If transshipment, find it's dropoff counterpart.
                 if(current_stops[k].node->type == 't'){
-                  float arrival_at_t = routes[i].get_arrival_time(current_stops[k]);
+                  double arrival_at_t = routes[i].get_arrival_time(current_stops[k]);
 
                   // Check all other route's stops.
                   for(int r = 0; r < routes.size(); r++){
@@ -174,6 +177,8 @@ class PDPTWT_solution{
                         temp[s].node == current_stops[k].node
                         &&
                         temp[s].request == current_stops[k].request
+                        &&
+                        temp[s].pickup_or_dropoff == false
                       )
                       {
                         // If dropoff counterpart arrived later than pickup.
@@ -196,7 +201,9 @@ class PDPTWT_solution{
 
 
     bool _capacity_check() const{ // Check if any vehicle's load is bigger than it's capacity at any point.
+
       for(int i = 0; i < routes.size(); i++){
+
         int current_load = 0;
         int capacity = problem->vehicles[i].capacity;
 
@@ -204,7 +211,9 @@ class PDPTWT_solution{
         for(int j = 0; j < current_stops.size(); j++){
           current_load += current_stops[j].get_load_change();
 
-          if(current_load > capacity) return false;
+          if(current_load > capacity)
+            return false;
+
         }
       }
 

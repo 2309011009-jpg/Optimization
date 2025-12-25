@@ -17,11 +17,11 @@ using namespace mlpalns;
 
 PDPTWT_solution Alg2(const Request* request, PDPTWT_solution& solution){
 
-  float best_cost;
-  float current_cost;
+  double best_cost;
+  double current_cost;
   PDPTWT_solution best_solution = solution;
   PDPTWT_solution current_solution = solution;
-  best_cost = std::numeric_limits<float>::max(); // +infinity
+  best_cost = std::numeric_limits<double>::max(); // +infinity
 
   for(int v = 0; v < solution.routes.size(); v++){ // Per Route
     Route* route_of_v = &solution.routes[v];
@@ -41,8 +41,8 @@ PDPTWT_solution Alg2(const Request* request, PDPTWT_solution& solution){
 
         }
 
-        route_of_v->stops.erase(route_of_v->stops.begin() + j);
-        route_of_v->stops.erase(route_of_v->stops.begin() + i);
+        route_of_v->erase_stop(j);
+        route_of_v->erase_stop(i);
       }
     }
   }
@@ -54,10 +54,10 @@ PDPTWT_solution Alg2(const Request* request, PDPTWT_solution& solution){
 
 PDPTWT_solution Alg3(const Request* request, PDPTWT_solution& solution){
 
-float best_cost;
-float current_cost;
+double best_cost;
+double current_cost;
 PDPTWT_solution best_solution = solution;
-best_cost = std::numeric_limits<float>::max(); // +infinity
+best_cost = std::numeric_limits<double>::max(); // +infinity
 
 for(int t = 0; t < solution.problem->transshipment_node_amount; t++){ // Per Transshipment Node
   Node* trans_node = &solution.problem->transshipment_nodes[t];
@@ -92,11 +92,11 @@ for(int t = 0; t < solution.problem->transshipment_node_amount; t++){ // Per Tra
                   best_solution = solution;
                 }
 
-                route1->stops.erase(route1->stops.begin() + j);
-                route1->stops.erase(route1->stops.begin() + i);
+                route1->erase_stop(j);
+                route1->erase_stop(i);
 
-                route2->stops.erase(route2->stops.begin() + j2);
-                route2->stops.erase(route2->stops.begin() + i2);
+                route2->erase_stop(j2);
+                route2->erase_stop(i2);
               }
             }
           }
@@ -122,7 +122,7 @@ struct PDPTWTSolutionCreator : InitialSolutionCreator<PDPTWT_solution, PDPTWT> {
 
       PDPTWT_solution initial_solution(instance);
 
-      float max_dist = 0;
+      double max_dist = 0;
       for(int i = 0; i < instance.node_amount * instance.node_amount; i++){
         if(instance.distance_matrix[i] > max_dist) max_dist = instance.distance_matrix[i];
       }
