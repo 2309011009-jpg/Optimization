@@ -102,7 +102,7 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
                 for(int v = 0; v < sol.problem->vehicle_amount; v++){
                     Route* route = &sol.routes[v];
                     for(int i = 0; i <= route->stops.size(); i++){
-                        for(int j = i + 1; j <= route->stops.size(); j++){ // FIX: removed +1
+                        for(int j = i + 1; j <= route->stops.size(); j++){
                             
                             route->insert_stop(i, trans_node, request, true);
                             route->insert_stop(j, request->destination, request, false);

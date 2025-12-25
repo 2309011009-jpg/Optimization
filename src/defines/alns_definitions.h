@@ -57,7 +57,7 @@ class PDPTWT_solution{
       }
 
       if(is_feasible() == false)
-        penalty += 10000;
+        penalty += 1000000;
 
       return total_cost + penalty;
     }
@@ -159,6 +159,7 @@ class PDPTWT_solution{
             // Check all previous stops.
             for(int k = 0; k < j; k++){
 
+              // Find where it was picked up
               if(current_stops[k].request == current_stops[j].request){
                 pickup_found = true;
 
