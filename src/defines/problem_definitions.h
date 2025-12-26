@@ -4,6 +4,7 @@
 #include <cmath>
 #include <tuple>
 #include <vector>
+#include <iostream>
 
 class Route;
 class PDPTWT;
@@ -236,7 +237,48 @@ class Route{
       return true;
     }
 
+    std::vector<std::string> get_route_str(){
 
+      std::vector<std::string> temp;
+      for(int i = 0; i < stops.size(); i++){
+        temp.push_back(std::to_string(stops[i].node->id));
+
+      }
+
+      return temp;
+    }
+
+    
+    std::string get_transfer_str(){
+
+      std::string temp;
+
+      std::string transfers = "T: ";
+      std::string requests = "R: ";
+      std::string pickup_or_dropoffs = "P/D: ";
+
+      for(int i = 1; i < stops.size() - 1; i++){
+
+        if(stops[i].node->type == 't'){
+          transfers += std::to_string(stops[i].node->id);
+          requests += std::to_string(stops[i].request->id);
+          transfers += "(" + std::to_string(get_arrival_time(stops[i])) + ")";
+          transfers += "-";
+          requests += "-";
+          
+          if(stops[i].pickup_or_dropoff) pickup_or_dropoffs += "P-";
+          else pickup_or_dropoffs += "D-";
+        }
+      }
+
+      if(transfers.back() == '-') transfers.pop_back();
+      if(requests.back() == '-') requests.pop_back();
+      if(pickup_or_dropoffs.back() == '-') pickup_or_dropoffs.pop_back();
+
+      temp += transfers + " " + requests + " " + pickup_or_dropoffs;
+
+      return temp;
+    }
 
 };
 
