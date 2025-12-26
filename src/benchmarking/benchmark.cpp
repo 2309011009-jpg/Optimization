@@ -95,8 +95,10 @@ void scan_directory(const fs::path& dir_path, int depth = 0) {
 
 struct SolverResult {
     double objective_value;
-    double computation_time_ms;
+    double computation_time_s;
     bool is_feasible;
+    std::vector<std::vector<string>> routes;
+    std::vector<string> transfers;
 };
 
 SolverResult run_solver(const fs::path& instance_path) {
@@ -135,14 +137,22 @@ SolverResult run_solver(const fs::path& instance_path) {
 
     // END TIMER
     auto end = std::chrono::high_resolution_clock::now();
-    res.computation_time_ms = std::chrono::duration<double>(end - start).count();
+    res.computation_time_s = std::chrono::duration<double>(end - start).count();
+
+    for(int i = 0; i < best_sol.routes.size(); i++){
+        res.routes.push_back(best_sol.routes[i].get_route_str());
+    }
+
+    for(int i = 0; i < best_sol.routes.size(); i++){
+        res.transfers.push_back(best_sol.routes[i].get_transfer_str());
+    }
 
     std::cout << "Done." << std::endl;
     return res;
 }
 
 // --- 4. Recursive Scan with CSV Writing ---
-void scan_and_solve(const fs::path& dir_path, std::ofstream& csv_file) {
+void scan_and_solve(const fs::path& dir_path, std::ofstream& csv_file, std::ofstream& routes_file) {
     if (!fs::exists(dir_path) || !fs::is_directory(dir_path)) return;
 
     std::vector<fs::path> entries;
@@ -155,7 +165,7 @@ void scan_and_solve(const fs::path& dir_path, std::ofstream& csv_file) {
     for (const auto& path : entries) {
         if (fs::is_directory(path)) {
             // Recurse into subfolder
-            scan_and_solve(path, csv_file); 
+            scan_and_solve(path, csv_file, routes_file); 
         } 
         else if (fs::is_regular_file(path)) {
             // 1. Run the solver
@@ -166,7 +176,29 @@ void scan_and_solve(const fs::path& dir_path, std::ofstream& csv_file) {
             csv_file << path.filename().string() << ","
               << (result.is_feasible ? "YES" : "NO") << ","
               << result.objective_value << ","
-              << std::fixed << std::setprecision(6) << result.computation_time_ms << "\n";
+              << std::fixed << std::setprecision(6) << result.computation_time_s << "\n";
+
+            // 2. Write to Routes CSV
+            // Format: Instance, Vehicle_ID, Route
+            int v_id = 1;
+            for (int i = 0; i < result.routes.size(); i++) {
+
+                routes_file << path.filename().string() << ","
+                            << v_id++ << "," << result.transfers[i];
+
+
+                for (int j = 0; j < result.routes[i].size(); j++){
+                    routes_file << ",";
+                    routes_file << result.routes[i][j];
+                }
+
+                routes_file << "\n";
+
+            }
+
+            routes_file << "\n";
+            routes_file.flush();
+
             
             // Optional: Flush to save immediately (safer if crash happens)
             csv_file.flush();
@@ -179,6 +211,7 @@ int main() {
     
     // Open CSV file for writing
     std::ofstream csv_file("benchmark_results.csv");
+    std::ofstream routes_csv("benchmark_routes.csv");
     
     // Check if file opened successfully
     if (!csv_file.is_open()) {
@@ -186,18 +219,22 @@ int main() {
         return 1;
     }
 
-    // Write CSV Header
-    csv_file << "Instance,Feasible,Objective,Time_ms\n";
+    if (!routes_csv.is_open()) {
+        std::cerr << "Error: Could not create benchmark_routes.csv. Is it open in Excel?" << std::endl;
+        return 1;
+    }
+
+    csv_file << "Instance,Feasible,Objective,Time_Sec\n";
+    routes_csv << "Instance,VehicleID,Transfers,RoutePath\n";   // <--- Header for routes
 
     std::cout << "Starting Benchmark..." << std::endl;
-    std::cout << "Results will be saved to 'benchmark_results.csv'" << std::endl;
-    std::cout << "-----------------------------------" << std::endl;
 
-    scan_and_solve(rootPath, csv_file);
+    // Pass both files
+    scan_and_solve(rootPath, csv_file, routes_csv);
 
-    std::cout << "-----------------------------------" << std::endl;
     std::cout << "Benchmark Complete." << std::endl;
     csv_file.close();
+    routes_csv.close();
 
     return 0;
 }
