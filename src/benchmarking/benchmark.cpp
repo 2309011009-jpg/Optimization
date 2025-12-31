@@ -12,11 +12,11 @@
 #include "../defines/alns_definitions.h"
 #include "../defines/lyu_and_yu_parser.h"
 #include "../defines/initial_solution.h"
-#include "../defines/greedy_insertion.h"
-#include "../defines/random_removal.h"
-#include "../defines/shaw_removal.h"
+#include "../defines/repair/insert_w_transfer.h"
+#include "../defines/destruction/random_removal.h"
+#include "../defines/destruction/shaw_removal.h"
 #include "../defines/dummy_visitor.h"
-#include "../defines/regret_k_insertion.h"
+#include "../defines/repair/regret_k_insertion.h"
 
 // Include ALNS Library Headers
 #include "../../libraries/adaptive-large-neighbourhood-search/src/PALNS.h"

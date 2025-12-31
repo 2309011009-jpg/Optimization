@@ -3,4 +3,4 @@ How to compile benchmark:
 
   With PGO:
   first: g++ ./benchmark.cpp -Ofast -o benchmark -march=native -flto=auto -DNDEBUG -lboost_filesystem -fprofile-generate
-  second: g++ ./benchmark.cpp -Ofast -o benchmark -march=native -flto=auto -DNDEBUG -lboost_filesystem -fprofile-useg++ ./benchmark.cpp -Ofast -o benchmark -march=native -flto=auto -DNDEBUG -lboost_filesystem -fprofile-use
+  second: g++ /benchmark.cpp -Ofast -o benchmark -march=native -flto=auto -DNDEBUG -lboost_filesystem -fprofile-use -fprofile-correction

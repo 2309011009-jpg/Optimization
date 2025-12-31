@@ -1,8 +1,8 @@
-#include "problem_definitions.h"
-#include "alns_definitions.h"
+#include "../problem_definitions.h"
+#include "../alns_definitions.h"
 #include <vector>
 #include <limits>
-#include "../../libraries/adaptive-large-neighbourhood-search/src/RepairMethod.h"
+#include "../../../libraries/adaptive-large-neighbourhood-search/src/RepairMethod.h"
 
 using namespace mlpalns;
 

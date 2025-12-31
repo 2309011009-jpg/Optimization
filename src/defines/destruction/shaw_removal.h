@@ -1,13 +1,12 @@
-#include "problem_definitions.h"
-#include "alns_definitions.h"
+#include "../problem_definitions.h"
+#include "../alns_definitions.h"
 #include <vector>
-#include <tuple>
-#include "../..//libraries/adaptive-large-neighbourhood-search/src/DestroyMethod.h"
+#include "../../..//libraries/adaptive-large-neighbourhood-search/src/DestroyMethod.h"
 
 
 using namespace mlpalns;
 
-double calculate_relativity(const PDPTWT* problem, const Request* R, const Request* S){
+inline double calculate_relativity(const PDPTWT* problem, const Request* R, const Request* S){
   double distance = problem->get_distance(R->origin, S->origin) + problem->get_distance(R->destination, S->destination);
   double time     = 
       abs(R->origin->earliest_tw - S->origin->earliest_tw) 

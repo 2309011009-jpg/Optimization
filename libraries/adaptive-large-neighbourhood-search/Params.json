@@ -22,7 +22,7 @@
     "Random walk",
     "Custom"
   ],
-  "acceptance-criterion": "Simulated annealing",
+  "acceptance-criterion": "Random walk",
 
   "acceptance-params-base-possible-values": [
     "time", "iterations"

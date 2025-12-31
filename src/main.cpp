@@ -2,10 +2,11 @@
 #include "defines/problem_definitions.h"
 #include "defines/alns_definitions.h"
 #include "defines/initial_solution.h"
-#include "defines/random_removal.h"
-#include "defines/shaw_removal.h"
-#include "defines/greedy_insertion.h"
+#include "defines/destruction/random_removal.h"
+#include "defines/destruction/shaw_removal.h"
+#include "defines/repair/insert_w_transfer.h"
 #include "defines/dummy_visitor.h"
+#include "defines/repair/regret_k_insertion.h"
 
 // ALNS Library Headers
 #include "../libraries/adaptive-large-neighbourhood-search/src/PALNS.h"
@@ -20,7 +21,7 @@ using namespace std;
 using namespace mlpalns;
 int main(){
   // g++ ./main.cpp -O3 -o main -march=native -flto=auto -lboost_filesystem
-  PDPTWT problem = parse("benchmarking/data/PDPT/PDPT-R30-K2-T1/PDPT-R30-K2-T1-Q100-2.txt");
+  PDPTWT problem = parse("benchmarking/data/PDPTWT/3R4K4T/3R-4K-4T-180S-4.txt");
 
   cout << "Problem Information:" << endl;
   cout << "Node Amount: " << problem.node_amount << endl;
@@ -47,6 +48,9 @@ int main(){
 
   ShawRemoval shaw_removal;
   alns.add_destroy_method(shaw_removal, "Related Requests");
+
+  regret_k_insertion regret_k_insertion;
+  alns.add_repair_method(regret_k_insertion, "Regret-K");
 
   mlpalns::Parameters params("../libraries/adaptive-large-neighbourhood-search/Params.json");
 
