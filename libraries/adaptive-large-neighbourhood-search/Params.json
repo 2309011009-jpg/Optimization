@@ -1,8 +1,8 @@
 {
-  "prerun-iterations": 2000,
+  "prerun-iterations": 0,
   "total-iterations": 10000,
   "timeout-s": 300,
-  "iters-without-improvement-max": 1000,
+  "iters-without-improvement-max": 10000,
   "iters-without-improvement-alarm": 100000,
 
   "iterations-without-syncing-threads": 1,
@@ -22,7 +22,7 @@
     "Random walk",
     "Custom"
   ],
-  "acceptance-criterion": "Random walk",
+  "acceptance-criterion": "Simulated annealing",
 
   "acceptance-params-base-possible-values": [
     "time", "iterations"
@@ -41,10 +41,10 @@
 
   "acceptance": {
     "simulated-annealing": {
-      "init-ratio-50p": 0.9,
+      "init-ratio-50p": 5,
       "end-ratio-50p": 0.01,
       "end-ratio-50p-refers-to-initial": false,
-      "temperature-decrease-is-linear": false,
+      "temperature-decrease-is-linear": true,
       "reheating": false,
       "reheating-coefficient": 5.0,
       "reheating-times": 2,

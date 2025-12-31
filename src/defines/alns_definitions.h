@@ -85,6 +85,7 @@ class PDPTWT_solution{
           else j++;
         }
       }
+      unassigned[request->id] = true;
     }
 
 

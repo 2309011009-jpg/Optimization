@@ -30,7 +30,7 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
         // -------------------------------------------------------
         for(int v = 0; v < sol.problem->vehicle_amount; v++){
             Route* route = &sol.routes[v];
-            // FIX: Loop condition must be <= size(), not size() + 1
+            
             for(int i = 0; i <= route->stops.size(); i++){
                 // After insert at i, size increases by 1. 
                 // j can go up to new_size (which is old_size + 1).

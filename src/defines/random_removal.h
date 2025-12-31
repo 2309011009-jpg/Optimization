@@ -19,9 +19,7 @@ struct RandomRemoval: public DestroyMethod<PDPTWT_solution> {
             // Be aware that this may remove the same request twice. Don't think it needs to be fixed though.
             int request_index = rand() % solution.problem->requests.size();
 
-
             solution.remove_request(&solution.problem->requests[request_index]);
-            solution.unassigned[request_index] = true;
 
         }
     }
