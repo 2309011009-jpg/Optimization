@@ -71,6 +71,8 @@ class Request{
 class PDPTWT{
   public:
 
+    PDPTWT(){}
+    
     Node* nodes;
     int node_amount;
     Vehicle* vehicles;

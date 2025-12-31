@@ -12,9 +12,11 @@
 #include "../defines/alns_definitions.h"
 #include "../defines/lyu_and_yu_parser.h"
 #include "../defines/initial_solution.h"
-#include "../defines/greedy_insertion.h"
-#include "../defines/random_removal.h"
+#include "../defines/repair/insert_w_transfer.h"
+#include "../defines/destruction/random_removal.h"
+#include "../defines/destruction/shaw_removal.h"
 #include "../defines/dummy_visitor.h"
+#include "../defines/repair/regret_k_insertion.h"
 
 // Include ALNS Library Headers
 #include "../../libraries/adaptive-large-neighbourhood-search/src/PALNS.h"
@@ -116,10 +118,18 @@ SolverResult run_solver(const fs::path& instance_path) {
     PDPTWT_solution initial_sol = creator.create_initial_solution(problem, rng); 
 
     RandomRemoval random_removal;
-    alns.add_destroy_method(random_removal, "Remove Randomly");
+    alns.add_destroy_method(random_removal, "Randomly");
 
     insert_w_transfer insert_w_transfer;
-    alns.add_repair_method(insert_w_transfer, "Insert With Transfer");
+    alns.add_repair_method(insert_w_transfer, "With Transfer");
+
+    ShawRemoval shaw_removal;
+    alns.add_destroy_method(shaw_removal, "Related Requests");
+
+    regret_k_insertion regret_k_insertion;
+    alns.add_repair_method(regret_k_insertion, "Regret-K");
+
+    
 
     mlpalns::Parameters params("Params.json");
 
