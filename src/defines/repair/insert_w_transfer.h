@@ -100,6 +100,9 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
                 sol.routes[best_l1.v].insert_stop(best_l1.j, trans_node, request, false);
 
                 for(int v = 0; v < sol.problem->vehicle_amount; v++){
+                    // Stop Self-Transfer
+                    if(best_l1.v == v) continue;
+
                     Route* route = &sol.routes[v];
                     for(int i = 0; i <= route->stops.size(); i++){
                         for(int j = i + 1; j <= route->stops.size(); j++){
@@ -165,6 +168,8 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
                 sol.routes[best_l2.v].insert_stop(best_l2.j, request->destination, request, false);
 
                 for(int v = 0; v < sol.problem->vehicle_amount; v++){
+                    if(best_l2.v == v) continue;
+
                     Route* route = &sol.routes[v];
                     for(int i = 0; i <= route->stops.size(); i++){
                         for(int j = i + 1; j <= route->stops.size(); j++){ // FIX: removed +1

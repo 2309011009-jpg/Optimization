@@ -5,17 +5,22 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include "../configurable.h"
+
 
 #include "../../../libraries/adaptive-large-neighbourhood-search/src/RepairMethod.h"
 
-
-// Regret-K
-#define K 10
-
 using namespace mlpalns;
 
-struct regret_k_insertion : public RepairMethod<PDPTWT_solution> {
+struct regret_k_insertion : public RepairMethod<PDPTWT_solution>, public Configurable {
+
+    regret_k_insertion() {
+        add_parameter("K Value", 2.0, 1.0, 10.0, 1.0);
+    }
+
     void repair_solution(PDPTWT_solution& sol, std::mt19937& mt) {
+
+      int K_VAL = get_int_param("K Value");
 
       vector<const Request*> removed_requests;
 
@@ -76,7 +81,7 @@ struct regret_k_insertion : public RepairMethod<PDPTWT_solution> {
           double best_cost = all_requests[i].front().second;
           double regret_k = 0;
 
-          for(int k = 0; k <= K && k < all_requests[i].size() - 1; k++)
+          for(int k = 0; k <= K_VAL && k < all_requests[i].size() - 1; k++)
             regret_k += all_requests[i][k + 1].second - best_cost;
           
           // If higher regret_k, save.
