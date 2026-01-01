@@ -19,6 +19,8 @@ class PDPTWT_solution{
 
 
 
+    PDPTWT_solution(){}
+
     PDPTWT_solution(
       const PDPTWT& problem_instance
     ){

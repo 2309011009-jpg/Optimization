@@ -2,11 +2,12 @@
 #include "../alns_definitions.h"
 #include <vector>
 #include "../../..//libraries/adaptive-large-neighbourhood-search/src/DestroyMethod.h"
+#include "../configurable.h"
 
 
 using namespace mlpalns;
 
-inline double calculate_relativity(const PDPTWT* problem, const Request* R, const Request* S){
+inline double calculate_relativity(const PDPTWT* problem, const Request* R, const Request* S, double distance_weight, double time_weight, double load_weight){
   double distance = problem->get_distance(R->origin, S->origin) + problem->get_distance(R->destination, S->destination);
   double time     = 
       abs(R->origin->earliest_tw - S->origin->earliest_tw) 
@@ -14,21 +15,31 @@ inline double calculate_relativity(const PDPTWT* problem, const Request* R, cons
       abs(R->destination->earliest_tw - S->destination->earliest_tw);
   int load     = abs(R->load + S->load);
 
-  double distance_weight = 1;
-  double time_weight     = 5;
-  double load_weight     = 1;
-
   return distance * distance_weight + time * time_weight + load * load_weight;
 }
 
 
-struct ShawRemoval: public DestroyMethod<PDPTWT_solution> {
+struct ShawRemoval: public DestroyMethod<PDPTWT_solution>, public Configurable {
+
+  ShawRemoval() {
+      add_parameter("Max Removal Percentage", 50.0, 10.0, 80.0, 5.0);
+      add_parameter("Distance Weight", 1.0, 0.0, 100.0, 0.1);
+      add_parameter("Time Weight", 1.0, 0.0, 100.0, 0.1);
+      add_parameter("Load Weight", 1.0, 0.0, 100.0, 0.1);
+    }
+
+
     void destroy_solution(PDPTWT_solution& solution, std::mt19937& mt) {
+
+      int max_removal_percentage = get_int_param("Max Removal Percentage");
+      double distance_weight = get_int_param("Distance Weight");
+      double time_weight = get_int_param("Time Weight");
+      double load_weight = get_int_param("Load Weight");
 
       const std::vector<Request>* requests = &solution.problem->requests;
 
       // Select a request randomly as seed. 
-      int percentage = (rand() % 30) + 1;
+      int percentage = (rand() % max_removal_percentage) + 1;
       int request_amount_to_remove = ((requests->size() * percentage) / 100);
       const Request* seed_request = &(*requests)[rand() % requests->size()];
 
@@ -56,7 +67,7 @@ struct ShawRemoval: public DestroyMethod<PDPTWT_solution> {
             // Score relativity of request.
             scores.push_back({
                   &(*requests)[i], 
-                  calculate_relativity(solution.problem, referance_request, &(*requests)[i])
+                  calculate_relativity(solution.problem, referance_request, &(*requests)[i], distance_weight, time_weight, load_weight)
                 });
           }
         }

@@ -4,6 +4,9 @@
 #include <vector>
 #include <string>
 
+#ifndef  PARSE
+#define PARSE
+
 PDPTWT parse(std::string path) {
 
     std::ifstream problem_file(path);
@@ -127,3 +130,5 @@ PDPTWT parse(std::string path) {
         number_of_transshipment_nodes
     );
 }
+
+#endif
