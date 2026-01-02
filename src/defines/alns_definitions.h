@@ -1,3 +1,7 @@
+#if defined(__INCLUDE_LEVEL__) && __INCLUDE_LEVEL__ == 0
+#error "Do not compile this header directly; include it from a .cpp file and use the Makefile or build.sh to build the project."
+#endif
+
 #ifndef ALNSDEFINITIONS_H
 #define ALNSDEFINITIONS_H
 
@@ -40,21 +44,21 @@ class PDPTWT_solution{
         routes.push_back(new_route);
       }
 
-      for(int i = 0; i < problem->requests.size(); i++){
+      for(size_t i = 0; i < problem->requests.size(); i++){
         unassigned.push_back(true);
       }
 
     }
 
-    double getCost() const{
-      double total_cost = 0;
+    float getCost() const{
+      float total_cost = 0;
       for(int i = 0; i < routes.size(); i++){
         total_cost += routes[i].calculate_cost();
       }
 
       double penalty = 0;
 
-      for(int i = 0; i < problem->requests.size(); i++){
+      for(size_t i = 0; i < problem->requests.size(); i++){
         if(unassigned[i]) penalty += 10000;
       }
 
@@ -78,8 +82,8 @@ class PDPTWT_solution{
     void remove_request(const Request* request) {
     
       // Check all stops and remove any associated stops.
-      for(int i = 0; i < routes.size(); i++){
-        for(int j = 0; j < routes[i].stops.size();){
+      for(size_t i = 0; i < routes.size(); i++){
+        for(size_t j = 0; j < routes[i].stops.size();){
           
           if(routes[i].stops[j].request == request){
             routes[i].stops.erase(routes[i].stops.begin() + j);
@@ -92,10 +96,10 @@ class PDPTWT_solution{
 
 
     void print_solution(){
-      for(int i = 0; i < problem->vehicle_amount; i++){
+      for(size_t i = 0; i < static_cast<size_t>(problem->vehicle_amount); i++){
       cout << endl << "Route of Vehicle " << i << " : ";
 
-      for(int j = 0; j < routes[i].stops.size(); j++){
+      for(size_t j = 0; j < routes[i].stops.size(); j++){
         cout << routes[i].stops[j].node->id << " - "; 
       }
 
@@ -105,8 +109,8 @@ class PDPTWT_solution{
  
     cout << "TRANSFERS:" << endl;
 
-    for(int i = 0; i < problem->vehicle_amount; i++){
-      for(int j = 0; j < routes[i].stops.size(); j++){
+    for(size_t i = 0; i < static_cast<size_t>(problem->vehicle_amount); i++){
+      for(size_t j = 0; j < routes[i].stops.size(); j++){
         if(routes[i].stops[j].node->type == 't'){
           if(routes[i].stops[j].pickup_or_dropoff){
             cout << "Vehicle " << i << " Pickup " << routes[i].stops[j].request->id << " at " << routes[i].stops[j].node->id << " at time point: " << routes[i].get_arrival_time(routes[i].stops[j]) << endl;
@@ -125,7 +129,7 @@ class PDPTWT_solution{
   private:
 
     bool _timing_check() const{ // Check if timing is satisfied.
-      for(int i = 0; i < routes.size(); i++){
+      for(size_t i = 0; i < routes.size(); i++){
         if(routes[i].check_timing() == false) 
           return false;
       }
@@ -135,7 +139,7 @@ class PDPTWT_solution{
 
 
     bool _structure_check() const{ // Check if vehicle starts from it's depot and ends in it's destination.
-      for(int i = 0; i < routes.size(); i++){
+      for(size_t i = 0; i < routes.size(); i++){
         if(
           routes[i].stops.front().node != problem->vehicles[i].origin
           ||
@@ -150,17 +154,17 @@ class PDPTWT_solution{
 
     bool _precedence_check() const { 
 
-      for(int i = 0; i < routes.size(); i++){
+      for(size_t i = 0; i < routes.size(); i++){
         auto current_stops = routes[i].stops;
 
-        for(int j = 0; j < current_stops.size(); j++){
+        for(size_t j = 0; j < current_stops.size(); j++){
 
           // If dropoff, an earlier pickup must've occured.
           if(current_stops[j].pickup_or_dropoff == false){
             bool pickup_found = false;
 
             // Check all previous stops.
-            for(int k = 0; k < j; k++){
+            for(size_t k = 0; k < j; k++){
 
               // Find where it was picked up
               if(current_stops[k].request == current_stops[j].request){
@@ -171,9 +175,9 @@ class PDPTWT_solution{
                   double arrival_at_t = routes[i].get_arrival_time(current_stops[k]);
 
                   // Check all other route's stops.
-                  for(int r = 0; r < routes.size(); r++){
+                  for(size_t r = 0; r < routes.size(); r++){
                     auto temp = routes[r].stops;
-                    for(int s = 0; s < temp.size(); s++){
+                    for(size_t s = 0; s < temp.size(); s++){
 
                       // If the stop is for the same request
                       if(
@@ -204,14 +208,12 @@ class PDPTWT_solution{
 
 
     bool _capacity_check() const{ // Check if any vehicle's load is bigger than it's capacity at any point.
-
       for(int i = 0; i < routes.size(); i++){
-
         int current_load = 0;
         int capacity = problem->vehicles[i].capacity;
 
         auto current_stops = routes[i].stops;
-        for(int j = 0; j < current_stops.size(); j++){
+        for(size_t j = 0; j < current_stops.size(); j++){
           current_load += current_stops[j].get_load_change();
 
           if(current_load > capacity)
@@ -225,7 +227,7 @@ class PDPTWT_solution{
 
 
     bool _request_check() const{ // Check if all requests have been assigned.
-      for(int i = 0; i < problem->requests.size(); i++){
+      for(size_t i = 0; i < problem->requests.size(); i++){
         if(unassigned[i] == true) return false;
       }
 

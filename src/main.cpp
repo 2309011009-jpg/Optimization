@@ -4,6 +4,7 @@
 #include "defines/initial_solution.h"
 #include "defines/destruction/random_removal.h"
 #include "defines/destruction/shaw_removal.h"
+#include "defines/destruction/worst_removal.h"
 #include "defines/repair/insert_w_transfer.h"
 #include "defines/dummy_visitor.h"
 #include "defines/repair/regret_k_insertion.h"
@@ -48,6 +49,10 @@ int main(){
 
   ShawRemoval shaw_removal;
   alns.add_destroy_method(shaw_removal, "Related Requests");
+
+  
+  WorstRemoval worst_removal;
+  alns.add_destroy_method(worst_removal, "Worst Costly");
 
   regret_k_insertion regret_k_insertion;
   alns.add_repair_method(regret_k_insertion, "Regret-K");
