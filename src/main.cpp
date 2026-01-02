@@ -5,6 +5,7 @@
 #include "defines/destruction/random_removal.h"
 #include "defines/destruction/shaw_removal.h"
 #include "defines/destruction/worst_removal.h"
+#include "defines/repair/greedy_insertion.h"
 #include "defines/repair/insert_w_transfer.h"
 #include "defines/dummy_visitor.h"
 #include "defines/repair/regret_k_insertion.h"
@@ -46,6 +47,10 @@ int main(){
 
   insert_w_transfer insert_w_transfer;
   alns.add_repair_method(insert_w_transfer, "With Transfer");
+
+  
+  GreedyInsertion greedy_insertion;
+  alns.add_repair_method(greedy_insertion, "Greedy Cheap");
 
   ShawRemoval shaw_removal;
   alns.add_destroy_method(shaw_removal, "Related Requests");
