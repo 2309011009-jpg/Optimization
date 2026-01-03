@@ -1,19 +1,21 @@
 #include "gtkmm/adjustment.h"
 #include "gtkmm/box.h"
-#include "gtkmm/button.h"
 #include "gtkmm/frame.h"
 #include "gtkmm/label.h"
+#include "gtkmm/menubutton.h"
+#include "gtkmm/spinbutton.h"
+#include "gtkmm/togglebutton.h"
 
 #include <map>
+#include <string>
 #include "../../../libraries/adaptive-large-neighbourhood-search/src/DestroyMethod.h"
 #include "../alns_definitions.h"
 
 // Destroy Operators
 #include "../destruction/random_removal.h"
 #include "../destruction/shaw_removal.h"
-#include "gtkmm/menubutton.h"
-#include "gtkmm/spinbutton.h"
-#include "gtkmm/togglebutton.h"
+#include "../destruction/worst_removal.h"
+
 
 
 #ifndef DESTROY
@@ -29,6 +31,7 @@ class destroy_operator_box : public Gtk::Box{
     void load_operators() {
       destroy_operators["Random Removal"] = new struct RandomRemoval;
       destroy_operators["Shaw Removal"] = new struct ShawRemoval;
+      destroy_operators["Worst Removal"] = new struct WorstRemoval;
     }
 
     destroy_operator_box(): Gtk::Box(Gtk::Orientation::VERTICAL, 5){

@@ -220,6 +220,20 @@ class Route{
       return 9999999;
     }
 
+    double _timing_penalty() const{
+      double total_penalty = 0;
+      double current_time = 0.0;
+
+      for(int i = 0; i < stops.size() - 1; i++){
+
+        current_time += problem->get_distance(stops[i].node, stops[i + 1].node);
+
+        if(current_time < stops[i + 1].node->earliest_tw) total_penalty += stops[i + 1].node->earliest_tw - current_time;
+        if(current_time > stops[i + 1].node->latest_tw) total_penalty += current_time - stops[i + 1].node->latest_tw ;
+    }
+
+    return total_penalty;
+  }
 
     bool check_timing() const {
 
@@ -229,9 +243,9 @@ class Route{
         current_time += problem->get_distance(stops[i].node, stops[i + 1].node);
 
         if(
-          current_time < stops[i].node->earliest_tw
+          current_time < stops[i + 1].node->earliest_tw
           ||
-          current_time > stops[i].node->latest_tw 
+          current_time > stops[i + 1].node->latest_tw 
         )
           return false;
 

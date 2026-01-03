@@ -1,9 +1,10 @@
 #include "gtkmm/adjustment.h"
 #include "gtkmm/box.h"
-#include "gtkmm/button.h"
-#include "gtkmm/checkbutton.h"
 #include "gtkmm/frame.h"
 #include "gtkmm/label.h"
+#include "gtkmm/menubutton.h"
+#include "gtkmm/spinbutton.h"
+#include "gtkmm/togglebutton.h"
 
 #include <map>
 #include "../../../libraries/adaptive-large-neighbourhood-search/src/RepairMethod.h"
@@ -13,9 +14,10 @@
 // Repair Operators
 #include "../repair/insert_w_transfer.h"
 #include "../repair/regret_k_insertion.h"
-#include "gtkmm/menubutton.h"
-#include "gtkmm/spinbutton.h"
-#include "gtkmm/togglebutton.h"
+#include "../repair/greedy_insertion.h"
+#include "../repair/random_insertion.h"
+#include "../repair/regret_w_transfer.h"
+#include "../repair/transfer_first.h"
 
 
 #ifndef REPAIR
@@ -31,6 +33,10 @@ class repair_operator_box : public Gtk::Box{
     void load_operators() {
       repair_operators["Insert With Transshipment"] = new struct insert_w_transfer;
       repair_operators["Regret-k Insertion"] = new struct regret_k_insertion;
+      repair_operators["Greedy Insertion"] = new struct GreedyInsertion;
+      repair_operators["Random Insertion"] = new struct RandomInsertion;
+      repair_operators["Regret With Transfer"] = new struct regret_w_transfer;
+      //repair_operators["Transfer First"] = new struct transfer_first_insertion;
     }
 
     repair_operator_box(): Gtk::Box(Gtk::Orientation::VERTICAL, 5){

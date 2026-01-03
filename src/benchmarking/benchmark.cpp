@@ -1,28 +1,38 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <cctype> // for std::isdigit
+#include <cctype>
 #include <string>
 #include <chrono>
 #include <algorithm>
-#include <iomanip> // <--- Add this header
+#include <iomanip>
+#include <boost/filesystem.hpp>
 
-// Include your existing project headers
+// PROBLEM
 #include "../defines/problem_definitions.h"
 #include "../defines/alns_definitions.h"
 #include "../defines/lyu_and_yu_parser.h"
 #include "../defines/initial_solution.h"
+#include "../defines/dummy_visitor.h"
+
+// REPAIR OPERATORS
 #include "../defines/repair/insert_w_transfer.h"
+#include "../defines/repair/regret_k_insertion.h"
+#include "../defines/repair/random_insertion.h"
+#include "../defines/repair/greedy_insertion.h"
+#include "../defines/repair/regret_w_transfer.h"
+#include "../defines/repair/transfer_first.h"
+
+// DESTROY OPERATORS
 #include "../defines/destruction/random_removal.h"
 #include "../defines/destruction/shaw_removal.h"
-#include "../defines/dummy_visitor.h"
-#include "../defines/repair/regret_k_insertion.h"
+#include "../defines/destruction/worst_removal.h"
+
 
 // Include ALNS Library Headers
 #include "../../libraries/adaptive-large-neighbourhood-search/src/PALNS.h"
 #include "../../libraries/adaptive-large-neighbourhood-search/src/Parameters.h"
 
-#include <boost/filesystem.hpp>
 using namespace mlpalns;
 
 //g++ ./benchmark.cpp -o solver -lboost_filesystem
@@ -120,17 +130,28 @@ SolverResult run_solver(const fs::path& instance_path) {
     RandomRemoval random_removal;
     alns.add_destroy_method(random_removal, "Randomly");
 
-    insert_w_transfer insert_w_transfer;
-    alns.add_repair_method(insert_w_transfer, "With Transfer");
-
     ShawRemoval shaw_removal;
     alns.add_destroy_method(shaw_removal, "Related Requests");
+
+    WorstRemoval worst_removal;
+    alns.add_destroy_method(worst_removal, "Worst");
+
+    insert_w_transfer insert_w_transfer;
+    alns.add_repair_method(insert_w_transfer, "With Transfer");
 
     regret_k_insertion regret_k_insertion;
     alns.add_repair_method(regret_k_insertion, "Regret-K");
 
-    
+    GreedyInsertion greedy_insertion;
+    alns.add_repair_method(greedy_insertion, "Greedy");
 
+    RandomInsertion random_insertion;
+    alns.add_repair_method(random_insertion, "Randomly");
+
+    regret_w_transfer regret_w_transfer;
+    alns.add_repair_method(regret_w_transfer, "!!RegretTransfer!!");
+
+    
     mlpalns::Parameters params("Params.json");
 
     std::unique_ptr<mlpalns::AlgorithmVisitor<PDPTWT_solution>> visitor = 
@@ -143,7 +164,7 @@ SolverResult run_solver(const fs::path& instance_path) {
     // DUMMY DATA FOR DEMONSTRATION:
     SolverResult res;
     res.objective_value = best_sol.getCost(); 
-    res.is_feasible = best_sol.is_feasible();
+    res.is_feasible = best_sol.hard_feasible();
 
     // END TIMER
     auto end = std::chrono::high_resolution_clock::now();
@@ -217,7 +238,7 @@ void scan_and_solve(const fs::path& dir_path, std::ofstream& csv_file, std::ofst
 }
 
 int main() {
-    fs::path rootPath("data/");
+    fs::path rootPath("data/PDPTWT");
     
     // Open CSV file for writing
     std::ofstream csv_file("benchmark_results.csv");

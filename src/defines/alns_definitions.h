@@ -50,8 +50,10 @@ class PDPTWT_solution{
 
     }
 
-    float getCost() const{
-      float total_cost = 0;
+
+
+    double getCost() const{
+      double total_cost = 0;
       for(int i = 0; i < routes.size(); i++){
         total_cost += routes[i].calculate_cost();
       }
@@ -62,18 +64,32 @@ class PDPTWT_solution{
         if(unassigned[i]) penalty += 10000;
       }
 
+      penalty+= _timing_penalty();
+
       if(is_feasible() == false)
         penalty += 1000000;
 
       return total_cost + penalty;
     }
 
+    // This is for soft-feasibility now.
+    // It ignores all requests being satisfied, or timing.
     bool is_feasible() const{
-      if(_timing_check() == false) return false;
+      //if(_timing_check() == false) return false;
       if(_structure_check() == false) return false;
       if(_precedence_check() == false) return false;
       if(_capacity_check() == false) return false;
       //if(_request_check() == false) return false;
+
+      return true;
+    }
+
+    bool hard_feasible() const{
+      if(_timing_check() == false) return false;
+      if(_structure_check() == false) return false;
+      if(_precedence_check() == false) return false;
+      if(_capacity_check() == false) return false;
+      if(_request_check() == false) return false;
 
       return true;
     }
@@ -122,10 +138,12 @@ class PDPTWT_solution{
 
     cout << "TOTAL COST: " << getCost() << endl;
 
-    cout << "Solution Feasibility: " << is_feasible() << endl;
+    cout << "Solution Feasibility: " << hard_feasible() << endl;
+    cout << "Time Penalty: " << _timing_penalty() << endl;
 
     }
 
+    double penalty_multiplier = 500;
   private:
 
     bool _timing_check() const{ // Check if timing is satisfied.
@@ -135,6 +153,18 @@ class PDPTWT_solution{
       }
 
       return true;
+    }
+
+
+    
+    // This function is used to relax timing windows in order to find feasible solutions.
+    double _timing_penalty() const{
+      double total_timing_penalty = 0;
+      for(int i = 0; i < routes.size(); i++){
+        total_timing_penalty += routes[i]._timing_penalty();
+      }
+
+      return total_timing_penalty * penalty_multiplier;
     }
 
 

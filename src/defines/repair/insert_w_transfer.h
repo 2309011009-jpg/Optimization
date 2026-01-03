@@ -9,10 +9,18 @@ using namespace mlpalns;
 struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
     void repair_solution(PDPTWT_solution& sol, std::mt19937& mt) {
 
-      for(int r = 0; r < sol.problem->requests.size(); r++){
-        if(!sol.unassigned[r]) continue;
+        // 1. Identify Unplanned Requests
+        std::vector<const Request*> removed_requests;
+        for(int i = 0; i < sol.problem->requests.size(); i++)
+            if(sol.unassigned[i]) removed_requests.push_back(&sol.problem->requests[i]);
 
-        const Request* request = &sol.problem->requests[r];
+        auto rng = std::default_random_engine {};
+        std::shuffle(std::begin(removed_requests), std::end(removed_requests), rng);
+
+        
+      for(int r = 0; r < removed_requests.size(); r++){
+
+        const Request* request = removed_requests[r];
 
         double best_cost = std::numeric_limits<double>::max();
         
@@ -204,7 +212,7 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
         if(best_method == 0){
             sol.routes[move1.v].insert_stop(move1.i, request->origin, request, true);
             sol.routes[move1.v].insert_stop(move1.j, request->destination, request, false);
-            sol.unassigned[r] = false;
+            sol.unassigned[removed_requests[r]->id] = false;
         }
         else if(best_method == 1){
             // Apply in Order: Leg 1 then Leg 2 (Indices are valid in this order)
@@ -216,7 +224,7 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
             sol.routes[move2.v].insert_stop(move2.i, t_node, request, true);
             sol.routes[move2.v].insert_stop(move2.j, request->destination, request, false);
             
-            sol.unassigned[r] = false;
+            sol.unassigned[removed_requests[r]->id] = false;
         }
         else if(best_method == 2){
             // Apply in Order: Leg 2 then Leg 1 (Indices are valid in this order)
@@ -230,7 +238,7 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
             sol.routes[move2.v].insert_stop(move2.i, request->origin, request, true);
             sol.routes[move2.v].insert_stop(move2.j, t_node, request, false);
             
-            sol.unassigned[r] = false;
+            sol.unassigned[removed_requests[r]->id] = false;
         }
       }
     }

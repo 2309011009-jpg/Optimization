@@ -15,11 +15,13 @@ public:
     request_info.set_label("Request Amount: " + to_string(p.requests.size()));
     node_info.set_label("Node Amount: " + to_string(p.node_amount));
     transshipment_info.set_label("Transshipment Amount: " + to_string(p.transshipment_node_amount));
-    cost_info.set_label("Cost: ???");
+    cost_info.set_label("Cost: Unknown");
+    feasibility_info.set_label("Feasible: Unknown");
   }
 
   void load_solution(const PDPTWT_solution& sol){
     cost_info.set_label("Cost: " + to_string(sol.getCost()));
+    feasibility_info.set_label(std::string("Feasible: ") + (sol.hard_feasible() ? "Yes!" : "No :("));
   }
 
   info_panel() : Gtk::Box(Gtk::Orientation::VERTICAL, 15){
@@ -29,6 +31,7 @@ public:
     append(transshipment_info);
 
     append(cost_info);
+    append(feasibility_info);
   }
 
   Gtk::Label vehicle_info;
@@ -37,7 +40,7 @@ public:
   Gtk::Label transshipment_info;
 
   Gtk::Label cost_info;
-
+  Gtk::Label feasibility_info;
 };
 
 #endif
