@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <tuple>
 #include <vector>
+#include <random>
 #include <algorithm>
 #include <utility>
 #include "../configurable.h"
@@ -15,7 +16,7 @@ using namespace mlpalns;
 struct regret_k_insertion : public RepairMethod<PDPTWT_solution>, public Configurable {
 
     regret_k_insertion() {
-        add_parameter("K Value", 2.0, 1.0, 10.0, 1.0);
+        add_parameter("K Value", 4.0, 1.0, 10.0, 1.0);
     }
 
     void repair_solution(PDPTWT_solution& sol, std::mt19937& mt) {
@@ -27,6 +28,10 @@ struct regret_k_insertion : public RepairMethod<PDPTWT_solution>, public Configu
       // Get all removed requests.
       for(int i = 0; i < sol.problem->requests.size(); i++)
         if(sol.unassigned[i] == true) removed_requests.push_back(&sol.problem->requests[i]);
+      
+
+      auto rng = std::default_random_engine {};
+      std::shuffle(std::begin(removed_requests), std::end(removed_requests), rng);
       
       // While not empty
       while(!removed_requests.empty()){

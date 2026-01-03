@@ -7,16 +7,24 @@
 #include <cmath>
 #include <memory>
 
-class WorstRemoval : public mlpalns::DestroyMethod<PDPTWT_solution> {
+#include "../../..//libraries/adaptive-large-neighbourhood-search/src/DestroyMethod.h"
+#include "../configurable.h"
+
+class WorstRemoval : public mlpalns::DestroyMethod<PDPTWT_solution> , public Configurable{
 public:
     std::unique_ptr<mlpalns::DestroyMethod<PDPTWT_solution>> clone() const override {
         return std::make_unique<WorstRemoval>(*this);
     }
 
+    WorstRemoval() {
+        add_parameter("Removal Percentage", 20.0, 10.0, 100.0, 5.0);
+        add_parameter("Randomization Strength", 3.0, 1.0, 10.0, 1.0);
+    }
+
     void destroy_solution(PDPTWT_solution& solution, std::mt19937& mt) override {
         // Parametreler: q (çıkarılacak adet), p (rastgelelik şiddeti)
-        int q = 3; 
-        double p = 3.0; 
+        int q = (get_int_param("Removal Percentage") * solution.problem->requests.size()) / 100; 
+        double p = get_param("Randomization Strength"); 
         
         struct RequestCost {
             int id;

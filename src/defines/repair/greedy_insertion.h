@@ -83,9 +83,6 @@ public:
                 solution.routes[best_route_idx].stops.insert(solution.routes[best_route_idx].stops.begin() + best_p_idx, p_stop);
                 solution.routes[best_route_idx].stops.insert(solution.routes[best_route_idx].stops.begin() + best_d_idx + 1, d_stop);
                 solution.unassigned[best_req_id] = false;
-
-                std::cout << "[Greedy] Request " << best_req_id << " -> Vehicle " << best_route_idx 
-                          << " (New Cost: " << min_total_cost << ")" << std::endl;
             } else {
                 break; 
             }

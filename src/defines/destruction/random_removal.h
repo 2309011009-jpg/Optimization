@@ -9,7 +9,7 @@ using namespace mlpalns;
 struct RandomRemoval: public DestroyMethod<PDPTWT_solution> , public Configurable{
 
     RandomRemoval(){
-        add_parameter("Max Removal Percentage", 50.0, 10.0, 80.0, 5.0);
+        add_parameter("Max Removal Percentage", 100.0, 10.0, 100.0, 5.0);
     }
 
     void destroy_solution(PDPTWT_solution& solution, std::mt19937& mt) {

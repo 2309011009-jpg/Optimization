@@ -270,7 +270,7 @@ protected:
                     if (!found && !solution->routes.empty()) ss << "\n(Unvisited)";
                 }
                 tooltip->set_text(ss.str());
-                tooltip->set_tip_area(Gdk::Rectangle(sx - 5, sy - 5, 10, 10));
+                tooltip->set_tip_area(Gdk::Rectangle(sx - 5, sy - 5, 30, 30));
                 return true; 
             }
         }

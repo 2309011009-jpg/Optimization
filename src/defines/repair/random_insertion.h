@@ -68,7 +68,6 @@ public:
                     route.stops.insert(route.stops.begin() + selected.d + 1, Stop(req->destination, req, false));
                     solution.unassigned[req_id] = false;
                     
-                    std::cout << "[Random] Request " << req_id << " -> Vehicle " << r << std::endl;
                     inserted = true;
                     break; 
                 }
