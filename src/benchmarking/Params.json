@@ -1,8 +1,8 @@
 {
-  "prerun-iterations": 3000,
+  "prerun-iterations": 0,
   "total-iterations": 100000,
   "timeout-s": 180,
-  "iters-without-improvement-max": 30000,
+  "iters-without-improvement-max": 3000,
   "iters-without-improvement-alarm": 1000,
 
   "iterations-without-syncing-threads": 1,
@@ -22,7 +22,7 @@
     "Random walk",
     "Custom"
   ],
-  "acceptance-criterion": "Random walk",
+  "acceptance-criterion": "Record-to-record travel",
 
   "acceptance-params-base-possible-values": [
     "time", "iterations"

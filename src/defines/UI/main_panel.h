@@ -11,6 +11,9 @@
 #include <thread>
 #include <glibmm/dispatcher.h>
 
+#include <gtkmm/filechoosernative.h>
+#include <filesystem>
+
 class main_box : public Gtk::Box {
 public:
     // Threading Members
@@ -49,6 +52,10 @@ public:
 
         mid_box->bottom_box.signal_problem_run().connect(
             sigc::mem_fun(*this, &main_box::solve_problem)
+        );
+
+        info_box->signal_solution_export().connect(
+            sigc::mem_fun(*this, &main_box::export_solution)
         );
 
         // Connect the "Thread Finished" signal
@@ -97,6 +104,81 @@ public:
                 this->run_solver_thread(prob_ptr, selected_repair, selected_destroy);
             }
         );
+    }
+
+    void export_solution() {
+        // 1. Create the dialog
+        // We use FileChooserNative for better OS integration (works better with Flatpaks/Portals)
+        auto dialog = Gtk::FileChooserNative::create(
+            "Select Output Folder",
+            *dynamic_cast<Gtk::Window*>(this->get_root()), // Get the parent window
+            Gtk::FileChooser::Action::SELECT_FOLDER,
+            "Select",
+            "Cancel"
+        );
+
+        // 2. Connect the response signal (Asynchronous callback)
+        // We capture 'dialog' by value (RefPtr) to keep it alive until the callback fires
+        dialog->signal_response().connect(
+            [this, dialog](int response_id) {
+                if (response_id == Gtk::ResponseType::ACCEPT) {
+                    // 3. Get the Glib::File object
+                    auto file = dialog->get_file();
+                    
+                    if (file) {
+                        // 4. Extract the path string
+                        std::string folder_path = file->get_path();
+                        
+                        // 5. Construct the full filename (using std::filesystem is safest)
+                        std::filesystem::path dir(folder_path);
+                        std::filesystem::path full_path = dir / "solution_output.txt";
+
+                        // 6. Save/Export logic
+                        std::cout << "Exporting to: " << full_path.string() << std::endl;
+                        
+                        // Assuming your solution class has a save/print method:
+                        // m_final_solution.save_to_file(full_path.string()); 
+                        
+                        // OR manually writing it here:
+                        std::ofstream out_file(full_path.string());
+                        if (out_file.is_open()) {
+                            // Example of writing the solution
+                            out_file << "Problem: " << mid_box->load_btn->get_label() << " - Solution Cost: " << m_final_solution.getCost() << "\n";
+
+                            std::vector<string> transfers;
+
+                            for(int i = 0; i < m_final_solution.routes.size(); i++){
+                               transfers.push_back(m_final_solution.routes[i].get_transfer_str());
+                            }
+
+
+                            int v_id = 1;
+                            for (int i = 0; i < m_final_solution.routes.size(); i++) {
+
+                                out_file << v_id++ << ": " << transfers[i];
+
+                                for (int j = 0; j < m_final_solution.routes[i].stops.size(); j++){
+                                    out_file << m_final_solution.routes[i].stops[j].node->id;
+                                    if(j != m_final_solution.routes[i].stops.size() - 1) out_file << " -> ";
+                                }
+
+
+
+                                out_file << "\n";
+
+                            }
+
+                            // Iterate routes...
+                            out_file.close();
+                        }
+                    }
+                }
+                // The dialog is hidden automatically, and the RefPtr goes out of scope here
+            }
+        );
+
+        // 3. Show the dialog
+        dialog->show();
     }
 
     // 3. The Background Worker (NO GUI ACCESS HERE!)
