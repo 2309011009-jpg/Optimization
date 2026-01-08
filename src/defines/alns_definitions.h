@@ -19,7 +19,7 @@ class PDPTWT_solution{
 
     // Array of bools, signifying if the problem->request[i] is assigned or not.
     // true == unassigned, false == assigned.
-    std::vector<char> unassigned;
+    std::vector<bool> unassigned;
 
 
 

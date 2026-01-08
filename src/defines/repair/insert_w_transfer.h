@@ -40,11 +40,6 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
             Route* route = &sol.routes[v];
             
             for(int i = 0; i <= route->stops.size(); i++){
-                // After insert at i, size increases by 1. 
-                // j can go up to new_size (which is old_size + 1).
-                // But route->stops.size() updates dynamically! 
-                // So j <= route->stops.size() is correct. 
-                // Removing the "+ 1" prevents the crash.
                 for(int j = i + 1; j <= route->stops.size(); j++){
                     
                     route->insert_stop(i, request->origin, request, true);
@@ -83,7 +78,7 @@ struct insert_w_transfer : public RepairMethod<PDPTWT_solution> {
                 double start_cost = route->calculate_cost();
 
                 for(int i = 0; i <= route->stops.size(); i++){
-                    for(int j = i + 1; j <= route->stops.size(); j++){ // FIX: removed +1
+                    for(int j = i + 1; j <= route->stops.size(); j++){
                         
                         route->insert_stop(i, request->origin, request, true);
                         route->insert_stop(j, trans_node, request, false);
