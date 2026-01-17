@@ -7,3 +7,5 @@ How to compile benchmark:
 
 Compile ui.cpp:
   g++ ./ui.cpp -Ofast -o constellation.out -march=native -flto=auto $(pkg-config --cflags --libs gtkmm-4.0)
+
+  You need the boost library to compile any of the codes, and if you want to compile the UI then you also need the GTK4 library.
