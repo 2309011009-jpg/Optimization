@@ -17,8 +17,6 @@
 #include "../repair/greedy_insertion.h"
 #include "../repair/random_insertion.h"
 #include "../repair/regret_w_transfer.h"
-#include "../repair/transfer_first.h"
-
 
 #ifndef REPAIR
 #define REPAIR
@@ -36,7 +34,6 @@ class repair_operator_box : public Gtk::Box{
       repair_operators["Greedy Insertion"] = new struct GreedyInsertion;
       repair_operators["Random Insertion"] = new struct RandomInsertion;
       repair_operators["Regret With Transfer"] = new struct regret_w_transfer;
-      //repair_operators["Transfer First"] = new struct transfer_first_insertion;
     }
 
     repair_operator_box(): Gtk::Box(Gtk::Orientation::VERTICAL, 5){

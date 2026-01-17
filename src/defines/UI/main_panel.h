@@ -106,80 +106,71 @@ public:
         );
     }
 
-    void export_solution() {
-        // 1. Create the dialog
-        // We use FileChooserNative for better OS integration (works better with Flatpaks/Portals)
-        auto dialog = Gtk::FileChooserNative::create(
-            "Select Output Folder",
-            *dynamic_cast<Gtk::Window*>(this->get_root()), // Get the parent window
-            Gtk::FileChooser::Action::SELECT_FOLDER,
-            "Select",
-            "Cancel"
-        );
+   void export_solution() {
+    // 1. Create the dialog
+    // Use FileChooserNative for better OS integration
+    auto dialog = Gtk::FileChooserNative::create(
+        "Select Output Folder",
+        *dynamic_cast<Gtk::Window*>(this->get_root()), 
+        Gtk::FileChooser::Action::SELECT_FOLDER,
+        "Select",
+        "Cancel"
+    );
 
-        // 2. Connect the response signal (Asynchronous callback)
-        // We capture 'dialog' by value (RefPtr) to keep it alive until the callback fires
-        dialog->signal_response().connect(
-            [this, dialog](int response_id) {
-                if (response_id == Gtk::ResponseType::ACCEPT) {
-                    // 3. Get the Glib::File object
-                    auto file = dialog->get_file();
+    // 2. Connect the response signal
+    dialog->signal_response().connect(
+        [this, dialog](int response_id) {
+            if (response_id == Gtk::ResponseType::ACCEPT) {
+                auto file = dialog->get_file();
+                
+                if (file) {
+                    // Use std::filesystem for safe path manipulation
+                    std::filesystem::path folder_path(file->get_path());
+                    std::filesystem::path full_path = folder_path / "solution_output.txt";
+
+                    std::cout << "Exporting to: " << full_path.string() << std::endl;
                     
-                    if (file) {
-                        // 4. Extract the path string
-                        std::string folder_path = file->get_path();
-                        
-                        // 5. Construct the full filename (using std::filesystem is safest)
-                        std::filesystem::path dir(folder_path);
-                        std::filesystem::path full_path = dir / "solution_output.txt";
+                    std::ofstream out_file(full_path.string());
+                    if (out_file.is_open()) {
+                        // --- HEADER INFO ---
+                        // Replicating the data extraction from your functional 'run_solver'
+                        out_file << "Instance: " << mid_box->load_btn->get_label() << "\n";
+                        out_file << "Objective Cost: " << m_final_solution.getCost() << "\n";
+                        out_file << "Feasible: " << (m_final_solution.hard_feasible() ? "YES" : "NO") << "\n";
+                        out_file << "--------------------------------------------------\n\n";
 
-                        // 6. Save/Export logic
-                        std::cout << "Exporting to: " << full_path.string() << std::endl;
-                        
-                        // Assuming your solution class has a save/print method:
-                        // m_final_solution.save_to_file(full_path.string()); 
-                        
-                        // OR manually writing it here:
-                        std::ofstream out_file(full_path.string());
-                        if (out_file.is_open()) {
-                            // Example of writing the solution
-                            out_file << "Problem: " << mid_box->load_btn->get_label() << " - Solution Cost: " << m_final_solution.getCost() << "\n";
+                        // --- ROUTES ---
+                        int v_id = 1;
+                        for (size_t i = 0; i < m_final_solution.routes.size(); i++) {
+                            // 1. Get Transfer Info (from functional code)
+                            std::string transfer_info = m_final_solution.routes[i].get_transfer_str();
+                            
+                            // 2. Get Stops (returns vector<string> based on your SolverResult logic)
+                            auto stops = m_final_solution.routes[i].get_route_str();
 
-                            std::vector<string> transfers;
+                            out_file << "Vehicle " << v_id++ << ": " << transfer_info << "\n";
+                            out_file << "Path: ";
 
-                            for(int i = 0; i < m_final_solution.routes.size(); i++){
-                               transfers.push_back(m_final_solution.routes[i].get_transfer_str());
+                            // 3. Iterate the strings directly
+                            for (size_t j = 0; j < stops.size(); j++) {
+                                out_file << stops[j];
+                                if (j != stops.size() - 1) out_file << " -> ";
                             }
-
-
-                            int v_id = 1;
-                            for (int i = 0; i < m_final_solution.routes.size(); i++) {
-
-                                out_file << v_id++ << ": " << transfers[i];
-
-                                for (int j = 0; j < m_final_solution.routes[i].stops.size(); j++){
-                                    out_file << m_final_solution.routes[i].stops[j].node->id;
-                                    if(j != m_final_solution.routes[i].stops.size() - 1) out_file << " -> ";
-                                }
-
-
-
-                                out_file << "\n";
-
-                            }
-
-                            // Iterate routes...
-                            out_file.close();
+                            out_file << "\n\n";
                         }
+
+                        out_file.close();
+                    } else {
+                        std::cerr << "Failed to open file for writing: " << full_path << std::endl;
                     }
                 }
-                // The dialog is hidden automatically, and the RefPtr goes out of scope here
             }
-        );
+        }
+    );
 
-        // 3. Show the dialog
-        dialog->show();
-    }
+    // 3. Show the dialog
+    dialog->show();
+}
 
     // 3. The Background Worker (NO GUI ACCESS HERE!)
     void run_solver_thread(const PDPTWT* prob, 

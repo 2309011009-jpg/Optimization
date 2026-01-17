@@ -21,7 +21,6 @@
 #include "../defines/repair/random_insertion.h"
 #include "../defines/repair/greedy_insertion.h"
 #include "../defines/repair/regret_w_transfer.h"
-#include "../defines/repair/transfer_first.h"
 
 // DESTROY OPERATORS
 #include "../defines/destruction/random_removal.h"
@@ -238,7 +237,7 @@ void scan_and_solve(const fs::path& dir_path, std::ofstream& csv_file, std::ofst
 }
 
 int main() {
-    fs::path rootPath("data/PDPTWT");
+    fs::path rootPath("data");
     
     // Open CSV file for writing
     std::ofstream csv_file("benchmark_results.csv");
